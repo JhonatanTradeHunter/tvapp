@@ -185,7 +185,7 @@ class MpvEngine implements PlaybackEngine {
         if (controller == null) return const SizedBox.expand();
         return mkv.Video(
           controller: controller,
-          // NoVideoControls é `const = null` (dynamic) no media_kit_video 2.x;
+          // NoVideoControls é declarado como `const = null` (tipo dynamic);
           // null direto desliga os controles e passa no tipo.
           controls: null,
         );
