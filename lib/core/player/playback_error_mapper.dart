@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:tvapp/core/models/playback_error.dart';
@@ -18,6 +17,7 @@ class PlaybackErrorMapper {
   );
 
   static const List<String> _networkHints = <String>[
+    'socketexception',
     'unknownhost',
     'connectexception',
     'sockettimeout',
@@ -73,7 +73,7 @@ class PlaybackErrorMapper {
 
   static PlaybackError fromObject(Object error) {
     if (error is PlaybackException) return error.error;
-    if (error is TimeoutException || error is SocketException) {
+    if (error is TimeoutException) {
       return PlaybackError.Rede;
     }
     if (error is FormatException) return PlaybackError.FonteInvalida;

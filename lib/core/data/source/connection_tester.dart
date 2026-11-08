@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:tvapp/core/data/source/playlist_loader.dart';
 import 'package:tvapp/core/data/xtream/xtream_client.dart';
 import 'package:tvapp/core/models/playlist_source.dart';
+import 'package:tvapp/core/platform/local_io.dart';
 
 class ConnectionReport {
   const ConnectionReport({
@@ -67,12 +67,6 @@ class ConnectionTester {
         elapsed: clock.elapsed,
         error: SourceError.timeout,
       );
-    } on SocketException {
-      return ConnectionReport(
-        ok: false,
-        elapsed: clock.elapsed,
-        error: SourceError.network,
-      );
     } on http.ClientException {
       return ConnectionReport(
         ok: false,
@@ -116,16 +110,15 @@ class ConnectionTester {
   }
 
   Future<ConnectionReport> _testFile(String path, Stopwatch clock) async {
-    final file = File(path);
-    if (!await file.exists()) {
+    final probe = await probeLocalFile(path, sniffBytes);
+    if (probe == null) {
       return ConnectionReport(
         ok: false,
         elapsed: clock.elapsed,
         error: SourceError.notFound,
       );
     }
-    final length = await file.length();
-    final head = await _collect(file.openRead(0, sniffBytes));
+    final (length, head) = probe;
     final playlist = looksLikePlaylist(head);
     return ConnectionReport(
       ok: playlist,

@@ -1,8 +1,4 @@
-import 'dart:io';
-
 import 'package:drift/drift.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 import 'package:tvapp/core/data/db/app_database.dart';
 import 'package:tvapp/core/data/m3u/m3u_importer.dart';
 import 'package:tvapp/core/data/m3u/m3u_stream_reader.dart';
@@ -11,6 +7,7 @@ import 'package:tvapp/core/data/xtream/xtream_client.dart';
 import 'package:tvapp/core/data/xtream/xtream_importer.dart';
 import 'package:tvapp/core/models/channel.dart';
 import 'package:tvapp/core/models/playlist_source.dart';
+import 'package:tvapp/core/platform/local_io.dart' as local_io;
 
 class SourceRepository {
   SourceRepository({
@@ -46,37 +43,15 @@ class SourceRepository {
     return source;
   }
 
-  Future<Directory> _playlistDir() async {
-    final support = await getApplicationSupportDirectory();
-    final dir = Directory(p.join(support.path, 'playlists'));
-    await dir.create(recursive: true);
-    return dir;
-  }
-
   /// Grava o arquivo escolhido na pasta do app, por stream. No Android o
   /// seletor devolve URI de SAF sem caminho, então a cópia é a única forma
-  /// de a fonte continuar válida para refresh.
-  Future<String> persistPickedFile(String name, Stream<List<int>> bytes) async {
-    final dir = await _playlistDir();
-    final safeName = p.basename(name).replaceAll(RegExp(r'[^\w.\-]'), '_');
-    final target = File(
-      p.join(dir.path, '${DateTime.now().millisecondsSinceEpoch}_$safeName'),
-    );
-    final sink = target.openWrite();
-    try {
-      await sink.addStream(bytes);
-    } finally {
-      await sink.close();
-    }
-    return target.path;
-  }
+  /// de a fonte continuar válida para refresh. Indisponível na web.
+  Future<String> persistPickedFile(String name, Stream<List<int>> bytes) =>
+      local_io.persistPickedFile(name, bytes);
 
   /// Copia um caminho local para a pasta do app, se ainda não estiver lá.
-  Future<String> persistLocalFile(String path) async {
-    final dir = await _playlistDir();
-    if (p.isWithin(dir.path, path)) return path;
-    return persistPickedFile(p.basename(path), File(path).openRead());
-  }
+  Future<String> persistLocalFile(String path) =>
+      local_io.persistLocalFile(path);
 
   /// Importa numa geração nova. A geração anterior continua visível até o
   /// fim; em erro ou cancelamento só a geração nova é descartada.
@@ -211,8 +186,9 @@ class SourceRepository {
       }
       return error;
     }
-    if (error is FileSystemException) {
-      return SourceException(SourceError.notFound, detail: error.message);
+    final fileError = local_io.fileSystemErrorMessage(error);
+    if (fileError != null) {
+      return SourceException(SourceError.notFound, detail: fileError);
     }
     return SourceException(SourceError.network, detail: '$error');
   }

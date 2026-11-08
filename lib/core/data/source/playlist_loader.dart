@@ -1,9 +1,9 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:tvapp/core/data/m3u/m3u_stream_reader.dart';
 import 'package:tvapp/core/models/playlist_source.dart';
+import 'package:tvapp/core/platform/local_io.dart';
 
 class PlaylistStream {
   PlaylistStream({
@@ -58,16 +58,8 @@ class PlaylistLoader {
   }
 
   Future<PlaylistStream> _openFile(String path) async {
-    final file = File(path);
-    if (!await file.exists()) {
-      throw const SourceException(SourceError.notFound);
-    }
-    final length = await file.length();
-    return PlaylistStream(
-      bytes: file.openRead(),
-      length: length,
-      close: () async {},
-    );
+    final (bytes, length) = await openLocalFile(path);
+    return PlaylistStream(bytes: bytes, length: length, close: () async {});
   }
 
   Future<PlaylistStream> _openHttp(

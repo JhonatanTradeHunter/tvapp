@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:tvapp/core/data/epg/xmltv_parser.dart';
 import 'package:tvapp/core/data/m3u/m3u_importer.dart';
 import 'package:tvapp/core/data/m3u/m3u_stream_reader.dart';
 import 'package:tvapp/core/models/playlist_source.dart';
+import 'package:tvapp/core/platform/local_io.dart';
 
 class XmltvImportResult {
   const XmltvImportResult({
@@ -84,10 +84,7 @@ Future<Stream<String>> decodeXmltvBytes(Stream<List<int>> input) async {
   var (head, stream) = await _peek(input, minBytes: _prologBytes);
   if (head == null) return const Stream<String>.empty();
   if (head.length >= 2 && head[0] == 0x1f && head[1] == 0x8b) {
-    (head, stream) = await _peek(
-      stream.transform(gzip.decoder),
-      minBytes: _prologBytes,
-    );
+    (head, stream) = await _peek(gunzip(stream), minBytes: _prologBytes);
     if (head == null) return const Stream<String>.empty();
   }
   final prologBytes = head.length > _prologBytes
