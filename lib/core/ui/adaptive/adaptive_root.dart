@@ -8,6 +8,7 @@ import 'package:tvapp/core/ui/components/empty_state.dart';
 import 'package:tvapp/features/guide/guide_screen.dart';
 import 'package:tvapp/features/live/live_screen.dart';
 import 'package:tvapp/features/setup/setup_screen.dart';
+import 'package:tvapp/features/vod/vod_screen.dart';
 import 'package:tvapp/l10n/gen/app_localizations.dart';
 
 enum ShellDestination { live, guide, vod, settings }
@@ -88,14 +89,7 @@ class DestinationBody extends StatelessWidget {
       case ShellDestination.guide:
         return GuideScreen(onGoLive: onGoLive);
       case ShellDestination.vod:
-        return EmptyState(
-          icon: ShellDestination.vod.icon,
-          title: l.navVod,
-          message: l.vodComingSoon,
-          actionLabel: l.goToLive,
-          onAction: onGoLive,
-          autofocusAction: true,
-        );
+        return VodScreen(onGoLive: onGoLive);
       case ShellDestination.settings:
         return EmptyState(
           icon: ShellDestination.settings.icon,

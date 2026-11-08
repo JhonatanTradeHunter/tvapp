@@ -5,7 +5,6 @@
   "navGuide": "Guia",
   "navVod": "Filmes e séries",
   "navSettings": "Configurações",
-  "vodComingSoon": "Filmes e séries chegam na fase 3.",
   "settingsComingSoon": "As configurações completas chegam depois. Por enquanto dá para adicionar ou trocar a fonte.",
   "goToLive": "Ir para Ao vivo",
   "manageSource": "Gerenciar fonte",
@@ -228,5 +227,38 @@
   "programmeUntitled": "Sem título",
   "watchLive": "Assistir ao vivo",
   "watchCatchup": "Assistir este programa",
-  "catchupUnavailable": "Este programa já terminou e o canal não oferece gravação para ele."
+  "catchupUnavailable": "Este programa já terminou e o canal não oferece gravação para ele.",
+  "vodMovies": "Filmes",
+  "vodSeries": "Séries",
+  "vodEmpty": "Esta fonte não tem filmes nem séries",
+  "vodEmptyHint": "O catálogo aparece em fontes Xtream Codes que oferecem filmes e séries.",
+  "vodNoItems": "Nada por aqui",
+  "durationMinutes": "{minutes} min",
+  "@durationMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "seasonNumber": "Temporada {number}",
+  "@seasonNumber": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "episodeLabel": "T{season} E{episode}",
+  "@episodeLabel": {
+    "placeholders": {
+      "season": {
+        "type": "int"
+      },
+      "episode": {
+        "type": "int"
+      }
+    }
+  },
+  "detailsLoadFailed": "Não foi possível carregar os detalhes"
 }

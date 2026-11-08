@@ -5,7 +5,6 @@
   "navGuide": "Guide",
   "navVod": "Movies and series",
   "navSettings": "Settings",
-  "vodComingSoon": "Movies and series arrive in phase 3.",
   "settingsComingSoon": "Full settings come later. For now you can add or switch the source.",
   "goToLive": "Go to Live",
   "manageSource": "Manage source",
@@ -105,5 +104,14 @@
   "programmeUntitled": "Untitled",
   "watchLive": "Watch live",
   "watchCatchup": "Watch this programme",
-  "catchupUnavailable": "This programme has ended and the channel offers no recording for it."
+  "catchupUnavailable": "This programme has ended and the channel offers no recording for it.",
+  "vodMovies": "Movies",
+  "vodSeries": "Series",
+  "vodEmpty": "This source has no movies or series",
+  "vodEmptyHint": "The catalogue shows up for Xtream Codes sources that offer movies and series.",
+  "vodNoItems": "Nothing here",
+  "durationMinutes": "{minutes} min",
+  "seasonNumber": "Season {number}",
+  "episodeLabel": "S{season} E{episode}",
+  "detailsLoadFailed": "Could not load the details"
 }
