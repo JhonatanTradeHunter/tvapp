@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:isolate';
+import 'package:flutter/foundation.dart';
 
 import 'package:tvapp/core/data/m3u/m3u_entry.dart';
 import 'package:tvapp/core/data/m3u/m3u_parser.dart';
@@ -48,11 +48,14 @@ class ImportResult {
 typedef EntrySink =
     Future<void> Function(List<KeyedEntry> batch, int startPosition);
 
-/// Função de topo para que o closure enviado ao isolate capture apenas
-/// as linhas e o cabeçalho, nunca o importador nem o banco.
+/// `compute` leva o parse para outro isolate no nativo e roda inline na
+/// web. A mensagem leva só as linhas e o cabeçalho.
 Future<ParsedChunk> parseChunkInIsolate(List<String> lines, M3uHeader header) {
-  return Isolate.run(() => M3uParser.parseRecords(lines, header));
+  return compute(_parseChunk, (lines, header));
 }
+
+ParsedChunk _parseChunk((List<String>, M3uHeader) args) =>
+    M3uParser.parseRecords(args.$1, args.$2);
 
 class M3uImporter {
   M3uImporter({

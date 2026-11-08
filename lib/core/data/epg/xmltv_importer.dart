@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:isolate';
 
+import 'package:flutter/foundation.dart';
 import 'package:tvapp/core/data/epg/xmltv_parser.dart';
 import 'package:tvapp/core/data/m3u/m3u_importer.dart';
 import 'package:tvapp/core/data/m3u/m3u_stream_reader.dart';
@@ -27,23 +27,18 @@ class XmltvImportResult {
 typedef XmltvChannelSink = Future<void> Function(List<XmltvChannel> batch);
 typedef XmltvProgrammeSink = Future<void> Function(List<XmltvProgramme> batch);
 
-/// Função de topo: o closure leva só os elementos e os limites.
+/// `compute`: isolate no nativo, inline na web.
 Future<ParsedXmltv> parseXmltvInIsolate(
   List<String> elements,
   int minStopMs,
   int maxStartMs,
 ) {
-  return Isolate.run(
-    () => XmltvParser.parseElements(
-      elements,
-      minStopMs: minStopMs,
-      maxStartMs: maxStartMs,
-    ),
-  );
+  return compute(_parseXmltv, (elements, minStopMs, maxStartMs));
 }
 
-/// Lê pelo menos [minBytes] (ou até o fim) e devolve esse começo junto com
-/// um stream equivalente ao original, começo incluído.
+ParsedXmltv _parseXmltv((List<String>, int, int) args) =>
+    XmltvParser.parseElements(args.$1, minStopMs: args.$2, maxStartMs: args.$3);
+
 Future<(List<int>?, Stream<List<int>>)> _peek(
   Stream<List<int>> source, {
   int minBytes = 1,

@@ -1,8 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:isolate';
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:tvapp/core/data/source/playlist_loader.dart';
 import 'package:tvapp/core/data/xtream/json_read.dart';
@@ -134,11 +133,14 @@ class XtreamClient {
     T Function(Object? json) parse,
   ) async {
     try {
-      return await Isolate.run(() => parse(_decode(bytes)));
+      return await compute(_decodeWith<T>, (bytes, parse));
     } on FormatException catch (e) {
       throw SourceException(SourceError.credentials, detail: e.message);
     }
   }
+
+  static T _decodeWith<T>((Uint8List, T Function(Object? json)) args) =>
+      args.$2(_decode(args.$1));
 
   static Object? _decode(Uint8List bytes) {
     final text = utf8.decode(bytes, allowMalformed: true).trim();

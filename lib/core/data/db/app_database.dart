@@ -1,9 +1,5 @@
-import 'dart:io';
-
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
+import 'package:tvapp/core/data/db/connection/connection.dart';
 import 'package:tvapp/core/data/db/daos/channel_dao.dart';
 import 'package:tvapp/core/data/db/daos/epg_dao.dart';
 import 'package:tvapp/core/data/db/daos/position_dao.dart';
@@ -28,7 +24,7 @@ part 'app_database.g.dart';
   daos: [ChannelDao, SourceDao, EpgDao, VodDao, PositionDao],
 )
 class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(_openConnection());
+  AppDatabase() : super(openConnection());
 
   AppDatabase.forTesting(super.executor);
 
@@ -64,12 +60,4 @@ class AppDatabase extends _$AppDatabase {
       await customStatement('PRAGMA foreign_keys = ON');
     },
   );
-}
-
-LazyDatabase _openConnection() {
-  return LazyDatabase(() async {
-    final dir = await getApplicationSupportDirectory();
-    final file = File(p.join(dir.path, 'tvapp.sqlite'));
-    return NativeDatabase.createInBackground(file);
-  });
 }
