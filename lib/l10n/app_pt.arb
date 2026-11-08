@@ -345,5 +345,8 @@
         "type": "int"
       }
     }
-  }
+  },
+  "demoLoading": "Abrindo a demonstração",
+  "demoOpenFailed": "Não foi possível abrir a demonstração",
+  "demoOpenTimeout": "O banco de dados não respondeu em 10 segundos. Recarregue a página para tentar de novo."
 }
