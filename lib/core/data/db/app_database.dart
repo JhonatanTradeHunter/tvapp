@@ -59,7 +59,9 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(sources, sources.serverTimezone);
       }
       if (from < 6) {
-        await m.addColumn(programmes, programmes.ageRating);
+        // createTable usa o formato atual da tabela. Se programmes nasceu no
+        // passo de v2 desta mesma migração, já veio com age_rating.
+        if (from >= 2) await m.addColumn(programmes, programmes.ageRating);
         await m.createTable(profiles);
         await m.createTable(profileBlockedGroups);
       }
