@@ -1,0 +1,57 @@
+name: web-demo
+
+# Versão web de demonstração (DEMO=true, dados embutidos). O build vai para a
+# branch web-demo, de onde é publicado como página no Claude.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Gerar scaffolding
+        run: |
+          flutter create --org com.jhonatanbaseggio123 --project-name tvapp --platforms android,ios,web .
+          rm -f test/widget_test.dart
+
+      - run: flutter pub get
+      - run: dart run build_runner build --delete-conflicting-outputs
+      - run: flutter gen-l10n
+
+      # O drift na web precisa do sqlite3.wasm e do worker na mesma versão dos pacotes.
+      - name: Baixar sqlite3.wasm e drift_worker.js
+        run: |
+          DRIFT=$(grep -A6 '^  drift:$' pubspec.lock | sed -n 's/.*version: "\(.*\)"/\1/p' | head -1)
+          SQLITE=$(grep -A6 '^  sqlite3:$' pubspec.lock | sed -n 's/.*version: "\(.*\)"/\1/p' | head -1)
+          echo "drift $DRIFT, sqlite3 $SQLITE"
+          curl -fsSL -o web/drift_worker.js "https://github.com/simolus3/drift/releases/download/drift-$DRIFT/drift_worker.js"
+          curl -fsSL -o web/sqlite3.wasm "https://github.com/simolus3/sqlite3.dart/releases/download/sqlite3-$SQLITE/sqlite3.wasm"
+          ls -la web/
+
+      # Sem CDN: a página do Claude não carrega o CanvasKit de fora.
+      - name: build web
+        run: flutter build web --release --no-web-resources-cdn --dart-define=DEMO=true --dart-define=TV=false
+
+      - name: Publicar na branch web-demo
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd build/web
+          git init -q -b web-demo
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -A && git commit -qm "web-demo ${GITHUB_SHA::7}"
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/$GITHUB_REPOSITORY" web-demo
