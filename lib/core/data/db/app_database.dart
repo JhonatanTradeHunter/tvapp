@@ -3,6 +3,7 @@ import 'package:tvapp/core/data/db/connection/connection.dart';
 import 'package:tvapp/core/data/db/daos/channel_dao.dart';
 import 'package:tvapp/core/data/db/daos/epg_dao.dart';
 import 'package:tvapp/core/data/db/daos/position_dao.dart';
+import 'package:tvapp/core/data/db/daos/profile_dao.dart';
 import 'package:tvapp/core/data/db/daos/source_dao.dart';
 import 'package:tvapp/core/data/db/daos/vod_dao.dart';
 import 'package:tvapp/core/data/db/tables.dart';
@@ -20,8 +21,10 @@ part 'app_database.g.dart';
     VodItems,
     SeriesItems,
     PlaybackPositions,
+    Profiles,
+    ProfileBlockedGroups,
   ],
-  daos: [ChannelDao, SourceDao, EpgDao, VodDao, PositionDao],
+  daos: [ChannelDao, SourceDao, EpgDao, VodDao, PositionDao, ProfileDao],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(openConnection());
@@ -29,7 +32,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -54,6 +57,11 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 5) {
         await m.addColumn(sources, sources.serverTimezone);
+      }
+      if (from < 6) {
+        await m.addColumn(programmes, programmes.ageRating);
+        await m.createTable(profiles);
+        await m.createTable(profileBlockedGroups);
       }
     },
     beforeOpen: (details) async {

@@ -24,6 +24,7 @@ class XmltvProgramme {
     this.subtitle,
     this.description,
     this.category,
+    this.ageRating,
   });
 
   /// Já em minúsculas e sem espaços nas pontas.
@@ -35,6 +36,9 @@ class XmltvProgramme {
   final String? description;
   final String? category;
 
+  /// Idade mínima de `<rating><value>`; 0 para livre, null se ausente.
+  final int? ageRating;
+
   XmltvProgramme withStop(DateTime value) => XmltvProgramme(
     channelId: channelId,
     start: start,
@@ -43,6 +47,7 @@ class XmltvProgramme {
     subtitle: subtitle,
     description: description,
     category: category,
+    ageRating: ageRating,
   );
 }
 
@@ -266,7 +271,35 @@ class XmltvParser {
       subtitle: _preferred(element, 'sub-title'),
       description: _preferred(element, 'desc'),
       category: _preferred(element, 'category'),
+      ageRating: parseAgeRating(element),
     );
+  }
+
+  static final RegExp _rating = RegExp(
+    r'<rating(?:\s[^>]*)?>[\s\S]*?<value(?:\s[^>]*)?>([\s\S]*?)</value>',
+  );
+  static final RegExp _digits = RegExp(r'\d{1,2}');
+  static const Set<String> _allAges = <String>{
+    'l',
+    'livre',
+    'al',
+    'all',
+    'g',
+    'tv-g',
+    'tv-y',
+    'u',
+  };
+
+  /// Classificação do primeiro `<rating>`: número de idade (`14`, `12+`,
+  /// `TV-14`, `A16`) ou 0 para livre (`L`, `Livre`, `G`, `TV-Y`).
+  static int? parseAgeRating(String element) {
+    final m = _rating.firstMatch(element);
+    if (m == null) return null;
+    final value = decodeText(m.group(1) ?? '').toLowerCase();
+    if (value.isEmpty) return null;
+    if (_allAges.contains(value)) return 0;
+    final digits = _digits.firstMatch(value);
+    return digits == null ? null : int.parse(digits.group(0)!);
   }
 
   static bool isSaneDuration(DateTime start, DateTime stop) {

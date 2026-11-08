@@ -97,6 +97,7 @@ class Programmes extends Table {
   TextColumn get subtitle => text().nullable()();
   TextColumn get description => text().nullable()();
   TextColumn get category => text().nullable()();
+  IntColumn get ageRating => integer().nullable()();
 }
 
 /// Filmes do catálogo (hoje via Xtream). Mesma geração dos canais da fonte,
@@ -159,4 +160,30 @@ class PlaybackPositions extends Table {
 
   @override
   Set<Column> get primaryKey => {sourceId, itemKey};
+}
+
+/// Perfis de quem usa o app. PIN de 4 dígitos guardado como hash com sal.
+/// `maxAge` só vale para perfil infantil; null = sem limite de idade.
+@DataClassName('ProfileRow')
+class Profiles extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text()();
+  IntColumn get colorIndex => integer().withDefault(const Constant(0))();
+  BoolColumn get isKids => boolean().withDefault(const Constant(false))();
+  IntColumn get maxAge => integer().nullable()();
+  TextColumn get pinHash => text().nullable()();
+  TextColumn get pinSalt => text().nullable()();
+  IntColumn get position => integer().withDefault(const Constant(0))();
+}
+
+/// Grupos escondidos para um perfil. `kind`: live, vod ou series.
+@DataClassName('ProfileBlockedGroupRow')
+class ProfileBlockedGroups extends Table {
+  IntColumn get profileId =>
+      integer().references(Profiles, #id, onDelete: KeyAction.cascade)();
+  TextColumn get kind => text()();
+  TextColumn get groupName => text()();
+
+  @override
+  Set<Column> get primaryKey => {profileId, kind, groupName};
 }

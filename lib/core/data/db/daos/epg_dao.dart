@@ -48,6 +48,7 @@ class EpgDao extends DatabaseAccessor<AppDatabase> with _$EpgDaoMixin {
             subtitle: Value(p.subtitle),
             description: Value(p.description),
             category: Value(p.category),
+            ageRating: Value(p.ageRating),
           ),
       ]);
     });
