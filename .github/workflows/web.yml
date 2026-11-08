@@ -34,8 +34,8 @@ jobs:
       # O drift na web precisa do sqlite3.wasm e do worker na mesma versão dos pacotes.
       - name: Baixar sqlite3.wasm e drift_worker.js
         run: |
-          DRIFT=$(grep -A6 '^  drift:$' pubspec.lock | sed -n 's/.*version: "\(.*\)"/\1/p' | head -1)
-          SQLITE=$(grep -A6 '^  sqlite3:$' pubspec.lock | sed -n 's/.*version: "\(.*\)"/\1/p' | head -1)
+          DRIFT=$(grep -A8 '^  drift:$' pubspec.lock | sed -n 's/.*version: "\(.*\)"/\1/p' | head -1)
+          SQLITE=$(grep -A8 '^  sqlite3:$' pubspec.lock | sed -n 's/.*version: "\(.*\)"/\1/p' | head -1)
           echo "drift $DRIFT, sqlite3 $SQLITE"
           curl -fsSL -o web/drift_worker.js "https://github.com/simolus3/drift/releases/download/drift-$DRIFT/drift_worker.js"
           curl -fsSL -o web/sqlite3.wasm "https://github.com/simolus3/sqlite3.dart/releases/download/sqlite3-$SQLITE/sqlite3.wasm"
