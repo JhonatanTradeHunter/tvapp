@@ -4,6 +4,7 @@ import 'package:tvapp/core/player/engine_capabilities.dart';
 import 'package:tvapp/core/player/exo_player_engine.dart';
 import 'package:tvapp/core/player/mpv_engine.dart';
 import 'package:tvapp/core/player/playback_engine.dart';
+import 'package:tvapp/core/player/web_video_engine.dart';
 
 enum MediaFormat { hls, rawTs, progressive, unknown }
 
@@ -22,36 +23,59 @@ class EngineDescriptor {
 }
 
 class EngineSelector {
-  EngineSelector(this.descriptors, {required this.platform});
+  EngineSelector(this.descriptors, {required this.platform, this.web = false});
 
-  factory EngineSelector.forPlatform(TargetPlatform platform) {
-    return EngineSelector(
-      <EngineDescriptor>[
-        EngineDescriptor(
-          kind: EngineKind.exoPlayer,
-          capabilities: ExoPlayerEngine.caps,
-          isAvailable: platform == TargetPlatform.android,
-          create: ExoPlayerEngine.new,
-        ),
-        EngineDescriptor(
-          kind: EngineKind.avPlayer,
-          capabilities: AvPlayerEngine.caps,
-          isAvailable: platform == TargetPlatform.iOS,
-          create: AvPlayerEngine.new,
-        ),
-        EngineDescriptor(
-          kind: EngineKind.mpv,
-          capabilities: MpvEngine.caps,
-          isAvailable: MpvEngine.isSupportedOn(platform),
-          create: MpvEngine.new,
-        ),
-      ],
-      platform: platform,
-    );
+  /// Na web só o `video_player` existe; `defaultTargetPlatform` ali reflete
+  /// o sistema do navegador e não pode ligar ExoPlayer, AVPlayer ou mpv.
+  factory EngineSelector.forPlatform(
+    TargetPlatform platform, {
+    bool web = kIsWeb,
+  }) {
+    if (web) {
+      return EngineSelector(
+        <EngineDescriptor>[
+          const EngineDescriptor(
+            kind: EngineKind.web,
+            capabilities: WebVideoEngine.caps,
+            isAvailable: true,
+            create: WebVideoEngine.new,
+          ),
+          const EngineDescriptor(
+            kind: EngineKind.mpv,
+            capabilities: MpvEngine.caps,
+            isAvailable: false,
+            create: MpvEngine.new,
+          ),
+        ],
+        platform: platform,
+        web: true,
+      );
+    }
+    return EngineSelector(<EngineDescriptor>[
+      EngineDescriptor(
+        kind: EngineKind.exoPlayer,
+        capabilities: ExoPlayerEngine.caps,
+        isAvailable: platform == TargetPlatform.android,
+        create: ExoPlayerEngine.new,
+      ),
+      EngineDescriptor(
+        kind: EngineKind.avPlayer,
+        capabilities: AvPlayerEngine.caps,
+        isAvailable: platform == TargetPlatform.iOS,
+        create: AvPlayerEngine.new,
+      ),
+      EngineDescriptor(
+        kind: EngineKind.mpv,
+        capabilities: MpvEngine.caps,
+        isAvailable: MpvEngine.isSupportedOn(platform),
+        create: MpvEngine.new,
+      ),
+    ], platform: platform);
   }
 
   final List<EngineDescriptor> descriptors;
   final TargetPlatform platform;
+  final bool web;
 
   static const List<String> _progressiveExtensions = <String>[
     '.mp4',
@@ -63,6 +87,7 @@ class EngineSelector {
   ];
 
   EngineKind get platformDefault {
+    if (web) return EngineKind.web;
     switch (platform) {
       case TargetPlatform.android:
         return EngineKind.exoPlayer;

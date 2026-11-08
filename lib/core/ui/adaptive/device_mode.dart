@@ -25,7 +25,7 @@ class DeviceModeDetector {
   /// Recurso de TV no sistema decide sozinho. Sem ele, o build de TV só vira
   /// TV se a tela for larga (shortestSide > 600) ou se não houver touchscreen.
   static Future<DeviceMode> detect() async {
-    if (defaultTargetPlatform != TargetPlatform.android) {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
       return DeviceMode.touch;
     }
     var hasTvFeature = false;

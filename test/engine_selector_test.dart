@@ -99,4 +99,14 @@ void main() {
       [EngineKind.mpv, EngineKind.exoPlayer],
     );
   });
+
+  test('web: só o video_player, mesmo com navegador no Android', () {
+    final web = EngineSelector.forPlatform(TargetPlatform.android, web: true);
+    expect(_kinds(web.candidatesFor(_req('http://h/x.m3u8'))), [
+      EngineKind.web,
+    ]);
+    expect(_kinds(web.candidatesFor(_req('http://h/x.ts'))), [EngineKind.web]);
+    expect(web.isAvailable(EngineKind.mpv), isFalse);
+    expect(web.isAvailable(EngineKind.exoPlayer), isFalse);
+  });
 }

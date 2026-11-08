@@ -3,7 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:tvapp/core/models/playback_error.dart';
 import 'package:tvapp/core/player/engine_capabilities.dart';
 
-enum EngineKind { exoPlayer, avPlayer, mpv }
+enum EngineKind { exoPlayer, avPlayer, mpv, web }
 
 enum PlaybackStatus { idle, opening, buffering, playing, paused, ended, failed }
 

@@ -13,6 +13,8 @@ String engineLabel(EngineKind kind) {
       return 'AVPlayer';
     case EngineKind.mpv:
       return 'mpv';
+    case EngineKind.web:
+      return 'HTML5';
   }
 }
 
