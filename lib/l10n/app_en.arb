@@ -5,7 +5,6 @@
   "navGuide": "Guide",
   "navVod": "Movies and series",
   "navSettings": "Settings",
-  "guideComingSoon": "The programme guide arrives in phase 2.",
   "vodComingSoon": "Movies and series arrive in phase 3.",
   "settingsComingSoon": "Full settings come later. For now you can add or switch the source.",
   "goToLive": "Go to Live",
@@ -95,5 +94,14 @@
   "engineLabel": "Player: {name}",
   "epgNow": "Now",
   "epgNext": "Next: {time} {title}",
-  "epgApproximate": "Guide matched by channel name; it may not correspond"
+  "epgApproximate": "Guide matched by channel name; it may not correspond",
+  "guideNoData": "The guide has not been loaded yet",
+  "guideNoDataHint": "The download starts on its own when the app opens, without interrupting playback. You can also refresh now.",
+  "guideNoUrl": "This source did not provide a guide address (url-tvg).",
+  "guideRefresh": "Refresh guide",
+  "guideUpdating": "Updating the guide",
+  "guideRefreshFailed": "Could not update the guide",
+  "guideNoProgramme": "No programme information",
+  "programmeUntitled": "Untitled",
+  "watchLive": "Watch live"
 }

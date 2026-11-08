@@ -5,6 +5,7 @@ import 'package:tvapp/core/ui/adaptive/device_mode.dart';
 import 'package:tvapp/core/ui/adaptive/phone_shell.dart';
 import 'package:tvapp/core/ui/adaptive/tv_shell.dart';
 import 'package:tvapp/core/ui/components/empty_state.dart';
+import 'package:tvapp/features/guide/guide_screen.dart';
 import 'package:tvapp/features/live/live_screen.dart';
 import 'package:tvapp/features/setup/setup_screen.dart';
 import 'package:tvapp/l10n/gen/app_localizations.dart';
@@ -85,14 +86,7 @@ class DestinationBody extends StatelessWidget {
       case ShellDestination.live:
         return const LiveScreen();
       case ShellDestination.guide:
-        return EmptyState(
-          icon: ShellDestination.guide.icon,
-          title: l.navGuide,
-          message: l.guideComingSoon,
-          actionLabel: l.goToLive,
-          onAction: onGoLive,
-          autofocusAction: true,
-        );
+        return GuideScreen(onGoLive: onGoLive);
       case ShellDestination.vod:
         return EmptyState(
           icon: ShellDestination.vod.icon,

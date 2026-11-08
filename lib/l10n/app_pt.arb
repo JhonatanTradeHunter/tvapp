@@ -5,7 +5,6 @@
   "navGuide": "Guia",
   "navVod": "Filmes e séries",
   "navSettings": "Configurações",
-  "guideComingSoon": "O guia de programação chega na fase 2.",
   "vodComingSoon": "Filmes e séries chegam na fase 3.",
   "settingsComingSoon": "As configurações completas chegam depois. Por enquanto dá para adicionar ou trocar a fonte.",
   "goToLive": "Ir para Ao vivo",
@@ -218,5 +217,14 @@
       }
     }
   },
-  "epgApproximate": "Guia associado pelo nome do canal; pode não corresponder"
+  "epgApproximate": "Guia associado pelo nome do canal; pode não corresponder",
+  "guideNoData": "O guia ainda não foi carregado",
+  "guideNoDataHint": "O download começa sozinho ao abrir o app, sem atrapalhar a reprodução. Também dá para atualizar agora.",
+  "guideNoUrl": "Esta fonte não informou endereço de guia (url-tvg).",
+  "guideRefresh": "Atualizar guia",
+  "guideUpdating": "Atualizando o guia",
+  "guideRefreshFailed": "Não foi possível atualizar o guia",
+  "guideNoProgramme": "Sem programação",
+  "programmeUntitled": "Sem título",
+  "watchLive": "Assistir ao vivo"
 }
