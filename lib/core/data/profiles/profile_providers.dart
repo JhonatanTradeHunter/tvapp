@@ -9,15 +9,28 @@ final profilesProvider = StreamProvider<List<ProfileRow>>(
   (ref) => ref.watch(databaseProvider).profileDao.watchAll(),
 );
 
-/// Perfil escolhido nesta sessão, lembrado entre aberturas. Nulo até a
-/// escolha: a tela de perfis aparece quando há mais de um perfil ou PIN.
+/// Perfil escolhido, lembrado entre aberturas. Perfil com PIN precisa ser
+/// liberado de novo a cada sessão: [isUnlocked] só vale para quem digitou o
+/// PIN desde que o app abriu.
 class ActiveProfileNotifier extends Notifier<int?> {
+  final Set<int> _unlocked = <int>{};
+
   @override
   int? build() => ref.read(appPrefsProvider).activeProfileId;
 
-  void select(int? id) {
+  bool isUnlocked(int id) => _unlocked.contains(id);
+
+  void select(int id, {bool verified = false}) {
+    if (verified) _unlocked.add(id);
     state = id;
     ref.read(appPrefsProvider).setActiveProfileId(id);
+  }
+
+  /// Volta para a escolha de perfil e exige o PIN outra vez.
+  void signOut() {
+    _unlocked.clear();
+    state = null;
+    ref.read(appPrefsProvider).setActiveProfileId(null);
   }
 }
 

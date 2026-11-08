@@ -5,7 +5,6 @@
   "navGuide": "Guia",
   "navVod": "Filmes e séries",
   "navSettings": "Configurações",
-  "settingsComingSoon": "As configurações completas chegam depois. Por enquanto dá para adicionar ou trocar a fonte.",
   "goToLive": "Ir para Ao vivo",
   "manageSource": "Gerenciar fonte",
   "genericError": "Algo deu errado",
@@ -269,5 +268,68 @@
         "type": "String"
       }
     }
-  }
+  },
+  "whoIsWatching": "Quem está assistindo?",
+  "manageProfiles": "Gerenciar perfis",
+  "switchProfile": "Trocar perfil",
+  "currentProfile": "Perfil: {name}",
+  "@currentProfile": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "profilesTitle": "Perfis",
+  "addProfile": "Adicionar perfil",
+  "editProfile": "Editar perfil",
+  "defaultProfileName": "Principal",
+  "profileName": "Nome do perfil",
+  "profileKids": "Perfil infantil",
+  "profileKidsHint": "Esconde conteúdo adulto e pede PIN para programas acima da idade máxima.",
+  "maxAgeLabel": "Idade máxima",
+  "ageFree": "Livre",
+  "ageNoLimit": "Sem limite",
+  "ageYears": "{age} anos",
+  "@ageYears": {
+    "placeholders": {
+      "age": {
+        "type": "int"
+      }
+    }
+  },
+  "pinLabel": "PIN",
+  "pinSet": "Definir PIN",
+  "pinChange": "Trocar PIN",
+  "pinRemove": "Remover PIN",
+  "pinEnterTitle": "Digite o PIN",
+  "pinNewTitle": "Novo PIN",
+  "pinConfirmTitle": "Confirme o PIN",
+  "pinWrong": "PIN incorreto",
+  "pinMismatch": "Os PINs não conferem",
+  "pinBackspace": "Apagar",
+  "pinForProfile": "PIN de {name}",
+  "@pinForProfile": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "guardianPinHint": "Use o PIN de um perfil adulto.",
+  "blockedGroupsLive": "Grupos de canais escondidos",
+  "blockedGroupsVod": "Categorias de filmes escondidas",
+  "blockedGroupsSeries": "Categorias de séries escondidas",
+  "noGroups": "Nenhum grupo nesta fonte",
+  "save": "Salvar",
+  "deleteProfile": "Excluir perfil",
+  "deleteProfileConfirm": "Excluir {name}? As posições salvas e os grupos escondidos deste perfil também saem.",
+  "@deleteProfileConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kidsSettingsLocked": "Fonte e perfis só podem ser alterados num perfil adulto."
 }

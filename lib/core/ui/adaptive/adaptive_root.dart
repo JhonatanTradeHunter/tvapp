@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tvapp/core/data/profiles/profile_providers.dart';
 import 'package:tvapp/core/data/providers.dart';
 import 'package:tvapp/core/ui/adaptive/device_mode.dart';
 import 'package:tvapp/core/ui/adaptive/phone_shell.dart';
 import 'package:tvapp/core/ui/adaptive/tv_shell.dart';
 import 'package:tvapp/core/ui/components/empty_state.dart';
+import 'package:tvapp/core/ui/focus/focusable_scale.dart';
 import 'package:tvapp/features/guide/guide_screen.dart';
 import 'package:tvapp/features/live/live_screen.dart';
+import 'package:tvapp/features/profiles/profile_picker_screen.dart';
+import 'package:tvapp/features/profiles/profiles_screen.dart';
 import 'package:tvapp/features/setup/setup_screen.dart';
 import 'package:tvapp/features/vod/vod_screen.dart';
 import 'package:tvapp/l10n/gen/app_localizations.dart';
@@ -52,9 +56,11 @@ class AdaptiveRoot extends ConsumerWidget {
     return active.when(
       data: (source) {
         if (source == null) return const SetupScreen(initial: true);
-        return UiVariantScope.isTv(context)
-            ? const TvShell()
-            : const PhoneShell();
+        return ProfileGate(
+          child: UiVariantScope.isTv(context)
+              ? const TvShell()
+              : const PhoneShell(),
+        );
       },
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
@@ -82,7 +88,6 @@ class DestinationBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context);
     switch (destination) {
       case ShellDestination.live:
         return const LiveScreen();
@@ -91,16 +96,83 @@ class DestinationBody extends StatelessWidget {
       case ShellDestination.vod:
         return VodScreen(onGoLive: onGoLive);
       case ShellDestination.settings:
-        return EmptyState(
-          icon: ShellDestination.settings.icon,
-          title: l.navSettings,
-          message: l.settingsComingSoon,
-          actionLabel: l.manageSource,
-          onAction: () => Navigator.of(
-            context,
-          ).push(MaterialPageRoute<void>(builder: (_) => const SetupScreen())),
-          autofocusAction: true,
-        );
+        return const _SettingsHome();
     }
+  }
+}
+
+/// Por enquanto, as Configurações são estes atalhos. No perfil infantil só
+/// aparece a troca de perfil.
+class _SettingsHome extends ConsumerWidget {
+  const _SettingsHome();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final profile = ref.watch(activeProfileProvider);
+    final kids = profile?.isKids ?? false;
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 520),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                ShellDestination.settings.icon,
+                size: 64,
+                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(height: 16),
+              Text(l.navSettings, style: theme.textTheme.headlineSmall),
+              if (profile != null) ...[
+                const SizedBox(height: 8),
+                Text(l.currentProfile(profile.name)),
+              ],
+              if (kids) ...[
+                const SizedBox(height: 8),
+                Text(l.kidsSettingsLocked, textAlign: TextAlign.center),
+              ],
+              const SizedBox(height: 24),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                alignment: WrapAlignment.center,
+                children: [
+                  if (!kids) ...[
+                    AppButton(
+                      label: l.manageSource,
+                      icon: Icons.playlist_add,
+                      autofocus: true,
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const SetupScreen(),
+                        ),
+                      ),
+                    ),
+                    AppButton(
+                      label: l.manageProfiles,
+                      icon: Icons.manage_accounts,
+                      primary: false,
+                      onPressed: () => openProfilesWithGuard(context, ref),
+                    ),
+                  ],
+                  AppButton(
+                    label: l.switchProfile,
+                    icon: Icons.switch_account,
+                    primary: kids,
+                    autofocus: kids,
+                    onPressed: () =>
+                        ref.read(activeProfileIdProvider.notifier).signOut(),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
