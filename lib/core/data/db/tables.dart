@@ -94,3 +94,50 @@ class Programmes extends Table {
   TextColumn get description => text().nullable()();
   TextColumn get category => text().nullable()();
 }
+
+/// Filmes do catálogo (hoje via Xtream). Mesma geração dos canais da fonte,
+/// então trocam juntos no fim de cada importação.
+@DataClassName('VodItemRow')
+@TableIndex(
+  name: 'idx_vod_listing',
+  columns: {#sourceId, #generation, #categoryName, #position},
+)
+class VodItems extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get sourceId =>
+      integer().references(Sources, #id, onDelete: KeyAction.cascade)();
+  IntColumn get generation => integer()();
+  IntColumn get position => integer()();
+  IntColumn get streamId => integer()();
+  TextColumn get name => text()();
+  TextColumn get nameFolded => text()();
+  TextColumn get icon => text().nullable()();
+  RealColumn get rating => real().nullable()();
+  TextColumn get categoryName => text()();
+  TextColumn get extension => text().nullable()();
+  DateTimeColumn get added => dateTime().nullable()();
+}
+
+/// Séries do catálogo. Temporadas e episódios vêm sob demanda da API.
+@DataClassName('SeriesItemRow')
+@TableIndex(
+  name: 'idx_series_listing',
+  columns: {#sourceId, #generation, #categoryName, #position},
+)
+class SeriesItems extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get sourceId =>
+      integer().references(Sources, #id, onDelete: KeyAction.cascade)();
+  IntColumn get generation => integer()();
+  IntColumn get position => integer()();
+  IntColumn get seriesId => integer()();
+  TextColumn get name => text()();
+  TextColumn get nameFolded => text()();
+  TextColumn get cover => text().nullable()();
+  TextColumn get plot => text().nullable()();
+  TextColumn get genre => text().nullable()();
+  TextColumn get releaseDate => text().nullable()();
+  RealColumn get rating => real().nullable()();
+  TextColumn get categoryName => text()();
+  DateTimeColumn get lastModified => dateTime().nullable()();
+}

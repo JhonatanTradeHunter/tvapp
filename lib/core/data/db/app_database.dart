@@ -7,14 +7,23 @@ import 'package:path_provider/path_provider.dart';
 import 'package:tvapp/core/data/db/daos/channel_dao.dart';
 import 'package:tvapp/core/data/db/daos/epg_dao.dart';
 import 'package:tvapp/core/data/db/daos/source_dao.dart';
+import 'package:tvapp/core/data/db/daos/vod_dao.dart';
 import 'package:tvapp/core/data/db/tables.dart';
 import 'package:tvapp/core/models/playlist_source.dart';
 
 part 'app_database.g.dart';
 
 @DriftDatabase(
-  tables: [Sources, Channels, Favorites, EpgChannels, Programmes],
-  daos: [ChannelDao, SourceDao, EpgDao],
+  tables: [
+    Sources,
+    Channels,
+    Favorites,
+    EpgChannels,
+    Programmes,
+    VodItems,
+    SeriesItems,
+  ],
+  daos: [ChannelDao, SourceDao, EpgDao, VodDao],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
@@ -22,7 +31,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -34,9 +43,13 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(sources, sources.epgRefresh);
         await m.createTable(epgChannels);
         await m.createTable(programmes);
-        // VERIFICAR: nome do getter que o drift gera para o @TableIndex
-        // 'idx_programmes_lookup' (camelCase do nome do índice).
         await m.createIndex(idxProgrammesLookup);
+      }
+      if (from < 3) {
+        await m.createTable(vodItems);
+        await m.createTable(seriesItems);
+        await m.createIndex(idxVodListing);
+        await m.createIndex(idxSeriesListing);
       }
     },
     beforeOpen: (details) async {

@@ -7,6 +7,8 @@ import 'package:tvapp/core/data/db/app_database.dart';
 import 'package:tvapp/core/data/m3u/m3u_importer.dart';
 import 'package:tvapp/core/data/m3u/m3u_stream_reader.dart';
 import 'package:tvapp/core/data/source/playlist_loader.dart';
+import 'package:tvapp/core/data/xtream/xtream_client.dart';
+import 'package:tvapp/core/data/xtream/xtream_importer.dart';
 import 'package:tvapp/core/models/channel.dart';
 import 'package:tvapp/core/models/playlist_source.dart';
 
@@ -15,13 +17,20 @@ class SourceRepository {
     required AppDatabase db,
     required PlaylistLoader loader,
     M3uImporter? importer,
+    XtreamImporter? xtreamImporter,
+    XtreamClient Function(XtreamCredentials credentials)? xtreamClientFactory,
   }) : _db = db,
        _loader = loader,
-       _importer = importer ?? M3uImporter();
+       _importer = importer ?? M3uImporter(),
+       _xtreamImporter = xtreamImporter ?? XtreamImporter(),
+       _xtreamClientFactory = xtreamClientFactory ?? XtreamClient.new;
 
   final AppDatabase _db;
   final PlaylistLoader _loader;
   final M3uImporter _importer;
+  final XtreamImporter _xtreamImporter;
+  final XtreamClient Function(XtreamCredentials credentials)
+  _xtreamClientFactory;
 
   Stream<PlaylistSource?> watchActive() => _db.sourceDao.watchActive().map(
     (row) => row == null ? null : _toModel(row),
@@ -85,20 +94,33 @@ class SourceRepository {
 
     PlaylistStream? stream;
     try {
-      stream = await _loader.open(saved, cancel: cancel);
-      final result = await _importer.run(
-        bytes: stream.bytes,
-        totalBytes: stream.length,
-        cancel: cancel,
-        onProgress: onProgress,
-        sink: (batch, start) =>
-            _db.channelDao.insertEntries(sourceId, generation, start, batch),
-      );
+      final ImportResult result;
+      final credentials = saved.xtream;
+      if (saved.kind == SourceKind.xtream && credentials != null) {
+        result = await _importXtream(
+          credentials,
+          sourceId,
+          generation,
+          cancel,
+          onProgress,
+        );
+      } else {
+        stream = await _loader.open(saved, cancel: cancel);
+        result = await _importer.run(
+          bytes: stream.bytes,
+          totalBytes: stream.length,
+          cancel: cancel,
+          onProgress: onProgress,
+          sink: (batch, start) =>
+              _db.channelDao.insertEntries(sourceId, generation, start, batch),
+        );
+      }
       if (result.imported == 0) {
         throw const SourceException(SourceError.empty);
       }
       await _db.transaction(() async {
         await _db.channelDao.deleteOtherGenerations(sourceId, generation);
+        await _db.vodDao.deleteOtherGenerations(sourceId, generation);
         await _db.sourceDao.markRefreshed(
           sourceId,
           generation,
@@ -116,11 +138,35 @@ class SourceRepository {
       return result;
     } catch (error) {
       await _db.channelDao.deleteGeneration(sourceId, generation);
+      await _db.vodDao.deleteGeneration(sourceId, generation);
       if (isNew) await _db.sourceDao.deleteSource(sourceId);
       throw _normalize(error, saved.kind, cancel);
     } finally {
       await stream?.close();
     }
+  }
+
+  /// Xtream pela API: canais nas mesmas tabelas do M3U, VOD e séries nas
+  /// tabelas de catálogo, tudo na mesma geração.
+  Future<ImportResult> _importXtream(
+    XtreamCredentials credentials,
+    int sourceId,
+    int generation,
+    ImportCancelToken? cancel,
+    void Function(ImportProgress progress)? onProgress,
+  ) async {
+    final result = await _xtreamImporter.run(
+      client: _xtreamClientFactory(credentials),
+      cancel: cancel,
+      onProgress: onProgress,
+      liveSink: (batch, start) =>
+          _db.channelDao.insertEntries(sourceId, generation, start, batch),
+      vodSink: (batch, start, names) =>
+          _db.vodDao.insertVod(sourceId, generation, start, batch, names),
+      seriesSink: (batch, start, names) =>
+          _db.vodDao.insertSeries(sourceId, generation, start, batch, names),
+    );
+    return result.toImportResult();
   }
 
   Future<ImportResult> refresh(
