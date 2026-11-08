@@ -111,7 +111,7 @@ def dump():
 
 
 def find(pattern, timeout=20, cls=None):
-    rx = re.compile(pattern, re.I | re.S)
+    rx = re.compile(pattern, re.I | re.M)
     end = time.time() + timeout
     while True:
         for n in dump():
@@ -136,8 +136,22 @@ def tap(pattern, timeout=20, cls=None):
     return True
 
 
-def type_into(pattern, text, timeout=20):
-    node = find(pattern, timeout)
+def nth_edit(index, timeout=10):
+    """Campos de texto do Flutter não expõem o rótulo ao uiautomator."""
+    end = time.time() + timeout
+    while True:
+        edits = [n for n in dump() if n["cls"].endswith("EditText")]
+        if len(edits) > index:
+            return edits[index]
+        if time.time() > end:
+            return None
+        time.sleep(1.5)
+
+
+def type_into(pattern, text, timeout=20, index=None):
+    node = find(pattern, 3) if pattern else None
+    if node is None and index is not None:
+        node = nth_edit(index, timeout)
     if node is None:
         return False
     tap_node(node)
@@ -175,7 +189,7 @@ def check(name, ok, detail="", shot_label=None):
         shell("uiautomator dump /sdcard/ui.xml >/dev/null 2>&1", timeout=30)
         raw = adb("exec-out", "cat", "/sdcard/ui.xml", timeout=30)
         compact = re.sub(r'(index|package|checkable|checked|enabled|focusable|focused|scrollable|long-clickable|password|selected|resource-id|NAF|drawing-order|hint|display-id)="[^"]*" ?', "", raw)
-        print("    xml: " + compact[:6000].replace("\n", " "), flush=True)
+        print("    xml: " + compact[:3000].replace("\n", " "), flush=True)
     return ok
 
 
@@ -209,14 +223,17 @@ def last_past_start():
 
 def import_url_source():
     """Primeira execução: a tela de configuração é a raiz."""
-    if not tap(r"^URL$|\bURL\b", timeout=40):
+    if not tap(r"^URL$", timeout=40):
+        print("    passo: aba URL não encontrada", flush=True)
         return False
-    if not type_into(r"Playlist URL|URL da lista", f"{BASE}/playlist.m3u"):
+    if not type_into(None, f"{BASE}/playlist.m3u", index=0):
+        print("    passo: campo da URL não encontrado", flush=True)
         return False
     hide_keyboard()
     if not tap(r"^Import$|^Importar$", timeout=10):
         swipe_up()
         if not tap(r"^Import$|^Importar$", timeout=10):
+            print("    passo: botão Importar não encontrado", flush=True)
             return False
     return find(r"Canal Um HLS", timeout=60) is not None
 
@@ -330,15 +347,10 @@ def go_settings_add_xtream():
         return "botão de gerenciar fonte não encontrado"
     if not tap(r"Xtream", timeout=10):
         return "aba Xtream não encontrada"
-    fields = (
-        (r"^Server|Servidor", "http://10.0.2.2"),
-        (r"Port|Porta", "8080"),
-        (r"Username|Usuário", "teste"),
-        (r"Password|Senha", "senha123"),
-    )
-    for pattern, value in fields:
-        if not type_into(pattern, value, timeout=8):
-            return f"campo {pattern} não encontrado"
+    fields = ("http://10.0.2.2", "8080", "teste", "senha123")
+    for index, value in enumerate(fields):
+        if not type_into(None, value, timeout=8, index=index):
+            return f"campo de texto {index + 1} não encontrado"
         hide_keyboard()
     if not tap(r"^Import$|^Importar$", timeout=8):
         swipe_up()
