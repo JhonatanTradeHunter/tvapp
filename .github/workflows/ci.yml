@@ -1,0 +1,76 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      # O zip não traz android/ e ios/ completos. O flutter create gera só o que falta
+      # e não sobrescreve AndroidManifest.xml nem Info.plist que já estão no repositório.
+      - name: Gerar scaffolding de plataforma
+        run: flutter create --org com.jhonatanbaseggio123 --project-name tvapp --platforms android,ios .
+
+      # O template cria test/widget_test.dart com MyApp, que não existe aqui.
+      - name: Remover teste do template
+        run: rm -f test/widget_test.dart
+
+      - name: pub get
+        run: flutter pub get
+
+      - name: build_runner
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: gen-l10n
+        run: flutter gen-l10n
+
+      - name: analyze
+        run: flutter analyze
+
+      - name: test
+        run: flutter test
+
+      - name: build apk (debug, TV)
+        run: flutter build apk --debug --dart-define=TV=true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tvapp-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+
+  ios:
+    runs-on: macos-latest
+    needs: android
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter create --org com.jhonatanbaseggio123 --project-name tvapp --platforms android,ios .
+      - run: flutter pub get
+      - run: dart run build_runner build --delete-conflicting-outputs
+      - run: flutter gen-l10n
+
+      # Sem assinatura: só confirma que compila. Instalar no iPhone exige conta Apple.
+      - name: build ios (sem assinatura)
+        run: flutter build ios --debug --no-codesign

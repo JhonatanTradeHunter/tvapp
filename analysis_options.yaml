@@ -1,0 +1,16 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  language:
+    strict-casts: true
+  exclude:
+    - "**/*.g.dart"
+    - "lib/l10n/gen/**"
+
+linter:
+  rules:
+    constant_identifier_names: false
+    prefer_const_constructors: true
+    prefer_const_declarations: true
+    prefer_final_locals: true
+    avoid_print: true
