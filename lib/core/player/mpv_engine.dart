@@ -268,10 +268,14 @@ class MpvEngine implements PlaybackEngine {
     String name,
     String value,
   ) async {
-    // VERIFICAR: NativePlayer exportado por package:media_kit/media_kit.dart
-    // e setProperty(String, String) disponível na versão resolvida.
     final platform = player.platform;
-    if (platform is mk.NativePlayer) await platform.setProperty(name, value);
+    if (platform is mk.NativePlayer) {
+      // Na web o media_kit troca NativePlayer por um stub sem setProperty.
+      // A chamada dinâmica compila nas duas plataformas; na web o mpv nem é
+      // oferecido pelo seletor, então ela só roda no nativo.
+      final dynamic native = platform;
+      await native.setProperty(name, value);
+    }
   }
 
   void _emitCurrent() {
