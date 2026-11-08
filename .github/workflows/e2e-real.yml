@@ -1,0 +1,121 @@
+name: e2e-real
+
+# Roda o APK mais recente no emulador contra o painel Xtream real cadastrado
+# nos segredos. Só à mão, pela aba Actions. Prints vão para e2e-real-results.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  emulator:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ github.token }}
+      XTREAM_URL: ${{ secrets.XTREAM_URL }}
+      XTREAM_PORT: ${{ secrets.XTREAM_PORT }}
+      XTREAM_USER: ${{ secrets.XTREAM_USER }}
+      XTREAM_PASS: ${{ secrets.XTREAM_PASS }}
+    steps:
+      - name: Mascarar credenciais
+        run: |
+          for v in "$XTREAM_USER" "$XTREAM_PASS"; do
+            [ -n "$v" ] && echo "::add-mask::$v"
+            [ -n "$v" ] && echo "::add-mask::$(python3 -c 'import sys,urllib.parse;print(urllib.parse.quote(sys.argv[1],safe=""))' "$v")"
+          done
+          true
+
+      - uses: actions/checkout@v5
+
+      - name: Baixar APK mais recente
+        run: |
+          RUN_ID=$(gh run list -R "$GITHUB_REPOSITORY" -w ci -b main -s success -L 1 --json databaseId --jq '.[0].databaseId')
+          echo "APK da execução $RUN_ID"
+          gh run download "$RUN_ID" -R "$GITHUB_REPOSITORY" -n tvapp-debug-apk -D apk
+
+      # Mesmo teste que o app faz, a partir do IP do runner: mostra o erro
+      # exato se o painel recusar. Nada da URL com credenciais vai para o log.
+      - name: Testar acesso ao painel
+        run: |
+          mkdir -p tool/e2e_real/out
+          python3 - <<'EOF' > tool/e2e_real/out/panel.txt
+          import json, os, re, urllib.parse, urllib.request
+          url = os.environ["XTREAM_URL"].strip().rstrip("/")
+          port = os.environ.get("XTREAM_PORT", "").strip()
+          if not re.match(r"^https?://", url):
+              url = "http://" + url
+          if port and not re.search(r"://[^/]+:\d+", url):
+              url += ":" + port
+          q = urllib.parse.urlencode({"username": os.environ["XTREAM_USER"], "password": os.environ["XTREAM_PASS"]})
+          secrets = [s for s in (os.environ["XTREAM_USER"], os.environ["XTREAM_PASS"]) if s]
+          def scrub(t):
+              for s in secrets:
+                  t = t.replace(s, "***")
+              return t
+          try:
+              with urllib.request.urlopen(f"{url}/player_api.php?{q}", timeout=30) as r:
+                  body = r.read(200000).decode("utf-8", "replace")
+                  try:
+                      info = json.loads(body).get("user_info", {})
+                      print(f"Painel respondeu HTTP {r.status}. auth={info.get('auth')} status={info.get('status')}")
+                  except (ValueError, AttributeError):
+                      print(f"Painel respondeu HTTP {r.status}, corpo não é JSON: {scrub(body[:200])!r}")
+          except Exception as exc:
+              print(scrub(f"Falha ao acessar o painel: {type(exc).__name__}: {exc}"))
+          EOF
+          cat tool/e2e_real/out/panel.txt
+
+      - name: Habilitar KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Rodar roteiro no emulador
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          script: python3 tool/e2e_real/real.py apk/app-debug.apk || echo falhou > tool/e2e_real/out/failed
+
+      - name: Resumo
+        if: always()
+        run: |
+          [ -f tool/e2e_real/out/report.md ] && cat tool/e2e_real/out/report.md >> "$GITHUB_STEP_SUMMARY"
+          true
+
+      # Só README e prints; sem logs do servidor nem logcat.
+      - name: Publicar na branch e2e-real-results
+        if: always()
+        run: |
+          [ -f tool/e2e_real/out/report.md ] || exit 0
+          rm -rf /tmp/pub && mkdir -p /tmp/pub/screens
+          cp tool/e2e_real/out/screens/*.png /tmp/pub/screens/ 2>/dev/null || true
+          {
+            echo "Execução: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo
+            cat tool/e2e_real/out/panel.txt 2>/dev/null
+            echo
+            sed -E 's#\| ([0-9]{2}-[^ |]+\.png) \|#| ![](screens/\1) |#' tool/e2e_real/out/report.md
+          } > /tmp/pub/README.md
+          if [ -n "$XTREAM_USER" ] && [ -n "$XTREAM_PASS" ] && grep -qF -e "$XTREAM_USER" -e "$XTREAM_PASS" /tmp/pub/README.md; then
+            echo "credencial encontrada no relatório; publicação cancelada"
+            exit 1
+          fi
+          cd /tmp/pub
+          git init -q -b e2e-real-results
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -A && git commit -qm "e2e-real $GITHUB_RUN_ID"
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/$GITHUB_REPOSITORY" e2e-real-results
+
+      - name: Falhar se o roteiro falhou
+        if: always()
+        run: test ! -f tool/e2e_real/out/failed

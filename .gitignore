@@ -21,3 +21,4 @@ ios/Flutter/flutter_export_environment.sh
 tool/e2e/www/
 tool/e2e/out/
 __pycache__/
+tool/e2e_real/out/
