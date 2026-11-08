@@ -25,6 +25,7 @@ SHOTS = os.path.join(OUT, "screens")
 LOG = os.path.join(OUT, "server.log")
 
 results = []
+observations = []
 shot_index = [0]
 last_dump = [[]]
 
@@ -313,7 +314,7 @@ def scenario_epg_download():
             hits = [e for e in server_log() if e.get("path", "").startswith("/epg.xml")]
             time.sleep(2)
     check(
-        "EPG baixado depois da importação (url-tvg)",
+        "EPG disponível para a lista que veio da versão antiga",
         bool(hits),
         f"{len(hits)} pedido(s) de /epg.xml" if hits else "o app não pediu o /epg.xml em 30s",
     )
@@ -378,11 +379,66 @@ def scenario_m3u_catchup():
     back()
 
 
-def go_settings_add_xtream():
+def open_setup_from_settings():
     if not tap(r"^Settings$|^Configurações$", timeout=10):
         return "aba Configurações não encontrada"
-    if not tap(r"Manage source|Gerenciar fonte|Add source|Adicionar fonte", timeout=10):
+    screenshot("settings")
+    if not tap(r"^Manage source$|^Gerenciar fonte$", timeout=10):
         return "botão de gerenciar fonte não encontrado"
+    return None
+
+
+def after_import(label):
+    """Prints logo após importar, e volta se a configuração ficar aberta."""
+    for i in (2, 6):
+        time.sleep(i)
+        screenshot(f"{label}-after-import-{i}s")
+    if find(r"^Add source$|^Adicionar fonte$", timeout=2) is not None:
+        observations.append(
+            f"{label}: depois de importar pelas Configurações, a tela \"Add source\" "
+            "continuou aberta, com os campos vazios. Foi preciso voltar à mão."
+        )
+        back()
+
+
+def reimport_m3u():
+    error = open_setup_from_settings()
+    if error:
+        return error
+    if not tap(r"^URL$", timeout=10):
+        return "aba URL não encontrada"
+    if not type_into(None, f"{BASE}/playlist.m3u", index=0):
+        return "campo da URL não encontrado"
+    hide_keyboard()
+    if not tap(r"^Import$|^Importar$", timeout=10):
+        return "botão Importar não encontrado"
+    after_import("M3U")
+    return None
+
+
+def scenario_epg_after_reimport():
+    since = time.time()
+    error = reimport_m3u()
+    if error:
+        check("Reimportar a lista M3U pela URL", False, error)
+        return
+    end = time.time() + 40
+    hits = []
+    while time.time() < end and not hits:
+        hits = [e for e in server_log(since) if e.get("path", "").startswith("/epg.xml")]
+        time.sleep(2)
+    tap(r"^Live$|^Ao vivo$", timeout=5)
+    check(
+        "Depois de reimportar, o EPG é baixado",
+        bool(hits),
+        f"{len(hits)} pedido(s) de /epg.xml" if hits else "o app não pediu o /epg.xml em 40s",
+    )
+
+
+def go_settings_add_xtream():
+    error = open_setup_from_settings()
+    if error:
+        return error
     if not tap(r"Xtream", timeout=10):
         return "aba Xtream não encontrada"
     fields = ("http://10.0.2.2", "8080", "teste", "senha123")
@@ -394,6 +450,7 @@ def go_settings_add_xtream():
         swipe_up()
         if not tap(r"^Import$|^Importar$", timeout=8):
             return "botão Importar não encontrado"
+    after_import("Xtream")
     return None
 
 
@@ -510,6 +567,11 @@ def write_report():
         mark = "✅" if r["ok"] else ("⏭️" if r["ok"] is None else "❌")
         detail = (r["detail"] or "").replace("|", "/")
         lines.append(f"| {mark} | {r['name']} | {detail} | {r['shot'] or ''} |")
+    if observations:
+        lines.append("")
+        lines.append("**Observações:**")
+        for o in observations:
+            lines.append(f"* {o}")
     if dismissed:
         lines.append("")
         lines.append("Diálogos do sistema fechados durante o teste: " + "; ".join(sorted(set(dismissed))))
@@ -529,6 +591,7 @@ def main():
         ("migração", lambda: scenario_migration(old_apk, new_apk)),
         ("epg", scenario_epg_download),
         ("ao vivo", scenario_live_playback),
+        ("epg após reimportar", scenario_epg_after_reimport),
         ("catch-up m3u", scenario_m3u_catchup),
         ("xtream", scenario_xtream),
         ("catch-up xtream", scenario_xtream_catchup),
