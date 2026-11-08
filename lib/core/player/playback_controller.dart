@@ -95,6 +95,7 @@ class PlaybackController extends Notifier<PlayerViewState> {
   List<EngineDescriptor> _candidates = const <EngineDescriptor>[];
   int _candidateIndex = 0;
   MediaRequest? _request;
+  Uri? _catchupUri;
   PlaybackError? _lastError;
   Timer? _watchdog;
   DateTime? _stalledSince;
@@ -117,20 +118,52 @@ class PlaybackController extends Notifier<PlayerViewState> {
 
   Future<void> playChannel(Channel channel, {List<Channel>? playlist}) async {
     if (playlist != null) _playlist = List<Channel>.unmodifiable(playlist);
+    _catchupUri = null;
     final seq = ++_seq;
-    _opened = false;
-    _watchdog?.cancel();
-    _lastError = null;
-
     final Uri uri;
     try {
       uri = Uri.parse(channel.playbackUrl);
     } on FormatException {
+      _resetAttempt();
+      state = PlayerViewState(channel: channel, engine: _engine);
       _onChannelExhausted(seq, channel, PlaybackError.FonteInvalida);
       return;
     }
+    unawaited(ref.read(appPrefsProvider).setLastChannelKey(channel.channelKey));
+    await _start(seq, channel, uri, isLive: true);
+  }
 
-    _request = MediaRequest(uri: uri, headers: channel.httpHeaders);
+  /// Reproduz um programa passado (catch-up) do canal. É tratado como VOD:
+  /// tem seekbar e, se falhar, mostra o erro sem pular para outro canal.
+  Future<void> playCatchup(
+    Channel channel,
+    Uri uri, {
+    List<Channel>? playlist,
+  }) async {
+    if (playlist != null) _playlist = List<Channel>.unmodifiable(playlist);
+    _catchupUri = uri;
+    final seq = ++_seq;
+    await _start(seq, channel, uri, isLive: false);
+  }
+
+  void _resetAttempt() {
+    _opened = false;
+    _watchdog?.cancel();
+    _lastError = null;
+  }
+
+  Future<void> _start(
+    int seq,
+    Channel channel,
+    Uri uri, {
+    required bool isLive,
+  }) async {
+    _resetAttempt();
+    _request = MediaRequest(
+      uri: uri,
+      headers: channel.httpHeaders,
+      isLive: isLive,
+    );
     _candidates = ref
         .read(engineSelectorProvider)
         .candidatesFor(
@@ -142,14 +175,20 @@ class PlaybackController extends Notifier<PlayerViewState> {
       channel: channel,
       engine: _engine,
       status: PlaybackStatus.opening,
+      isLive: isLive,
     );
-    unawaited(ref.read(appPrefsProvider).setLastChannelKey(channel.channelKey));
     await _tryCandidates(seq, channel, null);
   }
 
   Future<void> retry() async {
     final channel = state.channel;
-    if (channel != null) await playChannel(channel);
+    if (channel == null) return;
+    final catchup = _catchupUri;
+    if (catchup != null) {
+      await playCatchup(channel, catchup);
+    } else {
+      await playChannel(channel);
+    }
   }
 
   Future<void> zap(int delta) async {
@@ -301,7 +340,7 @@ class PlaybackController extends Notifier<PlayerViewState> {
     final count = (_failures[channel.id] ?? 0) + 1;
     _failures[channel.id] = count;
 
-    if (count >= 2) {
+    if (count >= 2 && state.isLive) {
       final next = _neighbor(channel, 1);
       if (next != null && next.id != channel.id) {
         _failures.remove(channel.id);
@@ -319,6 +358,7 @@ class PlaybackController extends Notifier<PlayerViewState> {
       engine: _engine,
       status: PlaybackStatus.failed,
       error: error,
+      isLive: state.isLive,
     );
   }
 

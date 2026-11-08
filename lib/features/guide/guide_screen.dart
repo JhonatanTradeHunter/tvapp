@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:tvapp/core/data/db/app_database.dart';
 import 'package:tvapp/core/data/epg/epg_providers.dart';
 import 'package:tvapp/core/models/channel.dart';
+import 'package:tvapp/core/player/catchup_url.dart';
 import 'package:tvapp/core/player/playback_controller.dart';
 import 'package:tvapp/core/ui/adaptive/device_mode.dart';
 import 'package:tvapp/core/ui/components/empty_state.dart';
@@ -129,6 +130,17 @@ class _GuideScreenState extends ConsumerState<GuideScreen> {
     ).push(MaterialPageRoute<void>(builder: (_) => const PlayerScreen()));
   }
 
+  void _playCatchup(Channel channel, Uri uri, List<Channel> all) {
+    unawaited(
+      ref
+          .read(playbackControllerProvider.notifier)
+          .playCatchup(channel, uri, playlist: all),
+    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const PlayerScreen()));
+  }
+
   void _select(
     Channel channel,
     ProgrammeRow? programme,
@@ -139,12 +151,26 @@ class _GuideScreenState extends ConsumerState<GuideScreen> {
       _play(channel, all);
       return;
     }
+    final ended = !programme.stopUtc.isAfter(now);
+    final catchup =
+        ended && CatchupUrlBuilder.isAvailable(channel, programme.startUtc, now)
+        ? CatchupUrlBuilder.build(
+            channel,
+            start: programme.startUtc,
+            end: programme.stopUtc,
+            now: now,
+          )
+        : null;
     unawaited(
       showProgrammeDetails(
         context,
         channel: channel,
         programme: programme,
+        ended: ended,
         onWatchLive: () => _play(channel, all),
+        onCatchup: catchup == null
+            ? null
+            : () => _playCatchup(channel, catchup, all),
       ),
     );
   }

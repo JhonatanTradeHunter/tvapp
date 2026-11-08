@@ -103,5 +103,7 @@
   "guideRefreshFailed": "Could not update the guide",
   "guideNoProgramme": "No programme information",
   "programmeUntitled": "Untitled",
-  "watchLive": "Watch live"
+  "watchLive": "Watch live",
+  "watchCatchup": "Watch this programme",
+  "catchupUnavailable": "This programme has ended and the channel offers no recording for it."
 }

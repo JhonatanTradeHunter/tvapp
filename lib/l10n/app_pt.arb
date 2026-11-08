@@ -226,5 +226,7 @@
   "guideRefreshFailed": "Não foi possível atualizar o guia",
   "guideNoProgramme": "Sem programação",
   "programmeUntitled": "Sem título",
-  "watchLive": "Assistir ao vivo"
+  "watchLive": "Assistir ao vivo",
+  "watchCatchup": "Assistir este programa",
+  "catchupUnavailable": "Este programa já terminou e o canal não oferece gravação para ele."
 }

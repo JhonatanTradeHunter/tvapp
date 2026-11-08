@@ -5,13 +5,16 @@ import 'package:tvapp/core/models/channel.dart';
 import 'package:tvapp/core/ui/focus/focusable_scale.dart';
 import 'package:tvapp/l10n/gen/app_localizations.dart';
 
-/// Detalhes de um programa que não está no ar. A ação principal abre o
-/// canal ao vivo; o catch-up entra aqui quando estiver disponível.
+/// Detalhes de um programa que não está no ar. Com [onCatchup], a ação
+/// principal reproduz o programa gravado; sem ela, abre o canal ao vivo.
+/// [ended] mostra o aviso de arquivo indisponível quando não há catch-up.
 Future<void> showProgrammeDetails(
   BuildContext context, {
   required Channel channel,
   required ProgrammeRow programme,
   required VoidCallback onWatchLive,
+  VoidCallback? onCatchup,
+  bool ended = false,
 }) {
   return showDialog<void>(
     context: context,
@@ -54,15 +57,35 @@ Future<void> showProgrammeDetails(
                   const SizedBox(height: 12),
                   Text(description, style: theme.textTheme.bodyMedium),
                 ],
+                if (ended && onCatchup == null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    l.catchupUnavailable,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
         ),
         actions: [
+          if (onCatchup != null)
+            AppButton(
+              label: l.watchCatchup,
+              icon: Icons.replay,
+              autofocus: true,
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                onCatchup();
+              },
+            ),
           AppButton(
             label: l.watchLive,
             icon: Icons.live_tv,
-            autofocus: true,
+            primary: onCatchup == null,
+            autofocus: onCatchup == null,
             onPressed: () {
               Navigator.of(dialogContext).pop();
               onWatchLive();
