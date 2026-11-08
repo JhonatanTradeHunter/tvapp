@@ -45,6 +45,13 @@ jobs:
       - name: build web
         run: flutter build web --release --no-web-resources-cdn --dart-define=DEMO=true --dart-define=TV=false
 
+      # A página do Claude fica numa subpasta de caminho variável. Sem <base>,
+      # os arquivos são resolvidos a partir do próprio index.html.
+      - name: Remover base href
+        run: |
+          sed -i '/<base href=/d' build/web/index.html
+          ! grep -q '<base' build/web/index.html
+
       - name: Publicar na branch web-demo
         env:
           GH_TOKEN: ${{ github.token }}
