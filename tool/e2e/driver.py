@@ -305,6 +305,20 @@ def wait_requests(kinds, since, timeout=25):
     return []
 
 
+def scenario_epg_download():
+    hits = [e for e in server_log() if e.get("path", "").startswith("/epg.xml")]
+    if not hits:
+        end = time.time() + 30
+        while time.time() < end and not hits:
+            hits = [e for e in server_log() if e.get("path", "").startswith("/epg.xml")]
+            time.sleep(2)
+    check(
+        "EPG baixado depois da importação (url-tvg)",
+        bool(hits),
+        f"{len(hits)} pedido(s) de /epg.xml" if hits else "o app não pediu o /epg.xml em 30s",
+    )
+
+
 def scenario_live_playback():
     for title, kinds in (
         ("Canal Um HLS", {"hls_segment"}),
@@ -506,11 +520,14 @@ def write_report():
 
 def main():
     os.makedirs(SHOTS, exist_ok=True)
+    # Sem o aviso "Viewing full screen" ao entrar no player em tela cheia.
+    shell("settings put secure immersive_mode_confirmations confirmed")
     new_apk = sys.argv[1]
     old_apk = sys.argv[2] if len(sys.argv) > 2 else None
 
     steps = [
         ("migração", lambda: scenario_migration(old_apk, new_apk)),
+        ("epg", scenario_epg_download),
         ("ao vivo", scenario_live_playback),
         ("catch-up m3u", scenario_m3u_catchup),
         ("xtream", scenario_xtream),
