@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:tvapp/l10n/gen/app_localizations.dart';
 
-/// Linha "agora" do EPG. Na fase 1 não há guia, então mostra o estado
-/// indisponível; a fase 2 passa título e horários.
+/// Linha "agora / a seguir" do EPG. Sem programa, mostra indisponível.
+/// [approximate] marca casamento feito pelo nome, não pelo `tvg-id`.
 class EpgPreviewRow extends StatelessWidget {
   const EpgPreviewRow({
     super.key,
@@ -11,6 +11,9 @@ class EpgPreviewRow extends StatelessWidget {
     this.title,
     this.start,
     this.end,
+    this.nextTitle,
+    this.nextStart,
+    this.approximate = false,
     this.now,
   });
 
@@ -18,6 +21,9 @@ class EpgPreviewRow extends StatelessWidget {
   final String? title;
   final DateTime? start;
   final DateTime? end;
+  final String? nextTitle;
+  final DateTime? nextStart;
+  final bool approximate;
   final DateTime? now;
 
   @override
@@ -28,18 +34,17 @@ class EpgPreviewRow extends StatelessWidget {
     final from = start;
     final to = end;
     final name = channelName;
+    final upcoming = nextTitle;
+    final upcomingAt = nextStart;
+    final format = DateFormat.Hm(Localizations.localeOf(context).toString());
 
     double? progress;
+    String? timeRange;
     if (from != null && to != null && to.isAfter(from)) {
       final current = now ?? DateTime.now();
       final total = to.difference(from).inSeconds;
       final elapsed = current.difference(from).inSeconds;
       progress = (elapsed / total).clamp(0.0, 1.0);
-    }
-
-    String? timeRange;
-    if (from != null && to != null) {
-      final format = DateFormat.Hm(Localizations.localeOf(context).toString());
       timeRange =
           '${format.format(from.toLocal())} - ${format.format(to.toLocal())}';
     }
@@ -54,11 +59,32 @@ class EpgPreviewRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (name != null)
-            Text(name, style: theme.textTheme.labelLarge, maxLines: 1),
+          Row(
+            children: [
+              if (name != null)
+                Expanded(
+                  child: Text(
+                    name,
+                    style: theme.textTheme.labelLarge,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              if (approximate)
+                Tooltip(
+                  message: l.epgApproximate,
+                  child: Icon(
+                    Icons.link,
+                    size: 18,
+                    color: theme.colorScheme.tertiary,
+                    semanticLabel: l.epgApproximate,
+                  ),
+                ),
+            ],
+          ),
           const SizedBox(height: 4),
           Text(
-            programme ?? l.epgUnavailable,
+            programme == null ? l.epgUnavailable : '${l.epgNow}: $programme',
             style: theme.textTheme.titleMedium,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -70,6 +96,15 @@ class EpgPreviewRow extends StatelessWidget {
           if (progress != null) ...[
             const SizedBox(height: 8),
             LinearProgressIndicator(value: progress),
+          ],
+          if (upcoming != null && upcomingAt != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              l.epgNext(format.format(upcomingAt.toLocal()), upcoming),
+              style: theme.textTheme.bodyMedium,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ],
         ],
       ),

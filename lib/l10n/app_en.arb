@@ -92,5 +92,8 @@
   "audioDelay": "Audio delay",
   "audioDelayValue": "{ms} ms",
   "noAudioTracks": "No tracks available",
-  "engineLabel": "Player: {name}"
+  "engineLabel": "Player: {name}",
+  "epgNow": "Now",
+  "epgNext": "Next: {time} {title}",
+  "epgApproximate": "Guide matched by channel name; it may not correspond"
 }

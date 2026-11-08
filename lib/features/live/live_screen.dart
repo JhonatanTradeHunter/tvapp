@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tvapp/core/data/epg/epg_providers.dart';
 import 'package:tvapp/core/models/channel.dart';
 import 'package:tvapp/core/models/channel_group.dart';
 import 'package:tvapp/core/player/playback_controller.dart';
@@ -89,6 +90,8 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
     final channelsAsync = ref.watch(channelsProvider);
     final filter = ref.watch(groupFilterProvider);
     final sort = ref.watch(liveSortProvider);
+    // Mantém o atualizador de EPG vivo sem reconstruir a tela a cada progresso.
+    ref.listen<EpgRefreshState>(epgRefresherProvider, (previous, next) {});
 
     final groupList = GroupList(
       groups: groups,
@@ -156,13 +159,37 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
                   const SizedBox(height: 12),
                   Expanded(child: channelList),
                   const SizedBox(height: 12),
-                  EpgPreviewRow(channelName: _focused?.name),
+                  _FocusedEpg(channel: _focused),
                 ],
               ),
             ),
           ),
         ),
       ],
+    );
+  }
+}
+
+class _FocusedEpg extends ConsumerWidget {
+  const _FocusedEpg({required this.channel});
+
+  final Channel? channel;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final focused = channel;
+    if (focused == null) return const EpgPreviewRow();
+    final info = ref.watch(nowNextProvider(focused)).valueOrNull;
+    final current = info?.current;
+    final next = info?.next;
+    return EpgPreviewRow(
+      channelName: focused.name,
+      title: current?.title,
+      start: current?.startUtc,
+      end: current?.stopUtc,
+      nextTitle: next?.title,
+      nextStart: next?.startUtc,
+      approximate: info?.match.isApproximate ?? false,
     );
   }
 }

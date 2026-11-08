@@ -56,7 +56,6 @@ jobs:
 
   ios:
     runs-on: macos-latest
-    needs: android
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4

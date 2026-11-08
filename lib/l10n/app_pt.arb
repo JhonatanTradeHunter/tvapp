@@ -25,9 +25,21 @@
   "noChannelsHint": "Escolha outro grupo ou atualize a fonte.",
   "epgUnavailable": "Programação indisponível",
   "addedToFavorites": "{name} entrou nos favoritos",
-  "@addedToFavorites": { "placeholders": { "name": { "type": "String" } } },
+  "@addedToFavorites": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "removedFromFavorites": "{name} saiu dos favoritos",
-  "@removedFromFavorites": { "placeholders": { "name": { "type": "String" } } },
+  "@removedFromFavorites": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "setupTitle": "Adicionar fonte",
   "tabLocalFile": "Arquivo",
   "tabUrl": "URL",
@@ -36,7 +48,13 @@
   "pickFile": "Escolher arquivo .m3u",
   "noFileSelected": "Nenhum arquivo escolhido",
   "selectedFile": "Arquivo: {name}",
-  "@selectedFile": { "placeholders": { "name": { "type": "String" } } },
+  "@selectedFile": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "fieldName": "Nome (opcional)",
   "fieldUrl": "URL da playlist",
   "fieldHost": "Servidor",
@@ -55,13 +73,37 @@
   "reportOk": "Conexão OK",
   "reportFailed": "Falha na conexão",
   "reportStatus": "HTTP {code}",
-  "@reportStatus": { "placeholders": { "code": { "type": "String" } } },
+  "@reportStatus": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
   "reportContentType": "Tipo: {type}",
-  "@reportContentType": { "placeholders": { "type": { "type": "String" } } },
+  "@reportContentType": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
   "reportSize": "Tamanho: {size} MB",
-  "@reportSize": { "placeholders": { "size": { "type": "String" } } },
+  "@reportSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
   "reportElapsed": "Tempo de resposta: {ms} ms",
-  "@reportElapsed": { "placeholders": { "ms": { "type": "int" } } },
+  "@reportElapsed": {
+    "placeholders": {
+      "ms": {
+        "type": "int"
+      }
+    }
+  },
   "reportLooksLikePlaylist": "O conteúdo parece uma playlist M3U",
   "reportNotPlaylist": "O conteúdo não parece uma playlist M3U",
   "reportHeadFallback": "O servidor recusou HEAD; o teste usou GET parcial",
@@ -69,17 +111,27 @@
   "importProgressDetail": "{entries} canais gravados, {size} MB lidos",
   "@importProgressDetail": {
     "placeholders": {
-      "entries": { "type": "int" },
-      "size": { "type": "String" }
+      "entries": {
+        "type": "int"
+      },
+      "size": {
+        "type": "String"
+      }
     }
   },
   "cancel": "Cancelar",
   "importSummary": "{imported} canais importados, {duplicates} duplicados, {discarded} descartados.",
   "@importSummary": {
     "placeholders": {
-      "imported": { "type": "int" },
-      "duplicates": { "type": "int" },
-      "discarded": { "type": "int" }
+      "imported": {
+        "type": "int"
+      },
+      "duplicates": {
+        "type": "int"
+      },
+      "discarded": {
+        "type": "int"
+      }
     }
   },
   "importTruncated": "Limite de 500 mil canais atingido; o restante foi ignorado.",
@@ -87,9 +139,21 @@
   "srcErrTimeout": "O servidor demorou demais para responder.",
   "srcErrNotFound": "Arquivo não encontrado.",
   "srcErrHttp4xx": "O servidor recusou o pedido (HTTP {code}).",
-  "@srcErrHttp4xx": { "placeholders": { "code": { "type": "String" } } },
+  "@srcErrHttp4xx": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
   "srcErrHttp5xx": "O servidor está com problema (HTTP {code}). Tente mais tarde.",
-  "@srcErrHttp5xx": { "placeholders": { "code": { "type": "String" } } },
+  "@srcErrHttp5xx": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
   "srcErrCredentials": "Usuário, senha ou servidor incorretos.",
   "srcErrInvalid": "O conteúdo recebido não é uma playlist M3U.",
   "srcErrEmpty": "A lista não tem nenhum canal válido.",
@@ -110,9 +174,15 @@
   "skippedChannel": "{from} falhou: {reason} Indo para {to}.",
   "@skippedChannel": {
     "placeholders": {
-      "from": { "type": "String" },
-      "reason": { "type": "String" },
-      "to": { "type": "String" }
+      "from": {
+        "type": "String"
+      },
+      "reason": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
     }
   },
   "play": "Reproduzir",
@@ -120,8 +190,33 @@
   "audioTracks": "Faixas de áudio",
   "audioDelay": "Atraso do áudio",
   "audioDelayValue": "{ms} ms",
-  "@audioDelayValue": { "placeholders": { "ms": { "type": "int" } } },
+  "@audioDelayValue": {
+    "placeholders": {
+      "ms": {
+        "type": "int"
+      }
+    }
+  },
   "noAudioTracks": "Nenhuma faixa disponível",
   "engineLabel": "Player: {name}",
-  "@engineLabel": { "placeholders": { "name": { "type": "String" } } }
+  "@engineLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "epgNow": "Agora",
+  "epgNext": "A seguir: {time} {title}",
+  "@epgNext": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "epgApproximate": "Guia associado pelo nome do canal; pode não corresponder"
 }
