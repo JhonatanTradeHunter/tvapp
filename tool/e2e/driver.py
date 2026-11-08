@@ -26,6 +26,7 @@ LOG = os.path.join(OUT, "server.log")
 
 results = []
 shot_index = [0]
+last_dump = [[]]
 
 
 # ---------------------------------------------------------------- adb
@@ -90,6 +91,7 @@ def dump():
     except ET.ParseError:
         return []
     nodes = []
+    last_dump[0] = nodes
     for n in root.iter("node"):
         b = _bounds(n.get("bounds"))
         if not b or b[2] <= b[0] or b[3] <= b[1]:
@@ -169,6 +171,9 @@ def check(name, ok, detail="", shot_label=None):
     results.append({"name": name, "ok": ok, "detail": detail, "shot": shot})
     mark = "OK " if ok else "FALHOU"
     print(f"[{mark}] {name} {detail}", flush=True)
+    if not ok:
+        labels = [n["label"] for n in dump() if n["label"]]
+        print("    tela: " + " || ".join(labels)[:1500], flush=True)
     return ok
 
 

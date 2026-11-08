@@ -46,6 +46,11 @@ jobs:
       - name: test
         run: flutter test
 
+      # Chave de debug fixa: sem ela, cada execução assina com uma chave nova
+      # e o Android recusa instalar o APK novo por cima do anterior.
+      - name: Chave de debug fixa
+        run: mkdir -p ~/.android && cp tool/ci/debug.keystore ~/.android/debug.keystore
+
       - name: build apk (debug, TV)
         run: flutter build apk --debug --dart-define=TV=true
 

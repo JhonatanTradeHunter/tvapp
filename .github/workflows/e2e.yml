@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   actions: read
 
 jobs:
@@ -59,6 +59,19 @@ jobs:
           sleep 2
           curl -fsS http://127.0.0.1:8080/playlist.m3u | head -3
 
+      # Cada execução do ci assina com uma chave de debug diferente, e o Android
+      # recusa atualizar entre chaves. Reassina os dois APKs com a mesma chave.
+      - name: Reassinar APKs com a mesma chave
+        run: |
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          keytool -genkeypair -keystore e2e.jks -storepass e2etest -keypass e2etest \
+            -alias e2e -keyalg RSA -keysize 2048 -validity 365 -dname "CN=e2e" >/dev/null 2>&1
+          for apk in apk/new/*.apk apk/old/*.apk; do
+            [ -f "$apk" ] || continue
+            "$BT/apksigner" sign --ks e2e.jks --ks-pass pass:e2etest --ks-key-alias e2e "$apk"
+            echo "reassinado: $apk"
+          done
+
       - name: Habilitar KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -90,6 +103,27 @@ jobs:
         with:
           name: e2e-resultado
           path: tool/e2e/out/
+
+      # Publica relatório e prints na branch e2e-results, para ver pelo app do
+      # GitHub sem baixar zip.
+      - name: Publicar na branch e2e-results
+        if: always()
+        run: |
+          [ -f tool/e2e/out/report.md ] || exit 0
+          rm -rf /tmp/pub && mkdir -p /tmp/pub/screens
+          cp tool/e2e/out/screens/*.png /tmp/pub/screens/ 2>/dev/null || true
+          cp tool/e2e/out/server.log tool/e2e/out/logcat-errors.txt /tmp/pub/ 2>/dev/null || true
+          {
+            echo "Execução: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo
+            sed -E 's#\| ([0-9]{2}-[^ |]+\.png) \|#| ![](screens/\1) |#' tool/e2e/out/report.md
+          } > /tmp/pub/README.md
+          cd /tmp/pub
+          git init -q -b e2e-results
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -A && git commit -qm "e2e $GITHUB_RUN_ID"
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/$GITHUB_REPOSITORY" e2e-results
 
       - name: Falhar se alguma verificação falhou
         if: always()
