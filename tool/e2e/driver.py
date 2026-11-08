@@ -172,8 +172,10 @@ def check(name, ok, detail="", shot_label=None):
     mark = "OK " if ok else "FALHOU"
     print(f"[{mark}] {name} {detail}", flush=True)
     if not ok:
-        labels = [n["label"] for n in dump() if n["label"]]
-        print("    tela: " + " || ".join(labels)[:1500], flush=True)
+        shell("uiautomator dump /sdcard/ui.xml >/dev/null 2>&1", timeout=30)
+        raw = adb("exec-out", "cat", "/sdcard/ui.xml", timeout=30)
+        compact = re.sub(r'(index|package|checkable|checked|enabled|focusable|focused|scrollable|long-clickable|password|selected|resource-id|NAF|drawing-order|hint|display-id)="[^"]*" ?', "", raw)
+        print("    xml: " + compact[:6000].replace("\n", " "), flush=True)
     return ok
 
 
