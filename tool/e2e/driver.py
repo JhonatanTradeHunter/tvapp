@@ -198,6 +198,22 @@ def back():
     time.sleep(2)
 
 
+def in_foreground():
+    out = shell("dumpsys activity activities | grep -E 'mResumedActivity|topResumedActivity'")
+    return PKG in out
+
+
+def to_shell():
+    """Volta até a barra de navegação principal, sem sair do app."""
+    for _ in range(4):
+        if not in_foreground():
+            launch()
+        if find(r"^Live$|^Ao vivo$", timeout=3) is not None:
+            return True
+        back()
+    return find(r"^Live$|^Ao vivo$", timeout=3) is not None
+
+
 def swipe_up():
     shell("input swipe 540 1500 540 600 300")
     time.sleep(1)
@@ -375,8 +391,7 @@ def scenario_m3u_catchup():
             ok,
             f"pediu start={got}, esperado {expected}",
         )
-    back()
-    back()
+    to_shell()
 
 
 def open_setup_from_settings():
@@ -512,8 +527,7 @@ def scenario_xtream_catchup():
         except (ValueError, TypeError) as exc:
             detail += f"; erro ao ler: {exc}"
         check(name, ok, detail)
-    back()
-    back()
+    to_shell()
 
 
 def scenario_vod():
@@ -599,8 +613,10 @@ def main():
     ]
     for label, step in steps:
         try:
-            if not app_alive():
+            if not app_alive() or not in_foreground():
                 launch()
+            if label not in ("migração",):
+                to_shell()
             step()
         except Exception as exc:  # noqa: BLE001
             check(f"Erro inesperado em {label}", False, str(exc)[:200])
