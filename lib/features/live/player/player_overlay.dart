@@ -57,6 +57,7 @@ class PlayerOverlay extends StatelessWidget {
     final engine = state.engine;
     final caps = state.capabilities;
     final playing = state.status == PlaybackStatus.playing;
+    final live = state.isLive;
     final audioTracks = onAudioTracks;
     final audioDelay = onAudioDelay;
 
@@ -81,11 +82,13 @@ class PlayerOverlay extends StatelessWidget {
                 children: [
                   ChannelLogo(url: channel.logo, size: 56),
                   const SizedBox(width: 16),
-                  Text(
-                    '${channel.displayNumber}',
-                    style: theme.textTheme.headlineSmall,
-                  ),
-                  const SizedBox(width: 16),
+                  if (live) ...[
+                    Text(
+                      '${channel.displayNumber}',
+                      style: theme.textTheme.headlineSmall,
+                    ),
+                    const SizedBox(width: 16),
+                  ],
                   Expanded(
                     child: Text(
                       channel.name,
@@ -117,29 +120,33 @@ class PlayerOverlay extends StatelessWidget {
               spacing: 12,
               runSpacing: 12,
               children: [
-                _OverlayButton(
-                  icon: Icons.skip_previous,
-                  label: l.previousChannel,
-                  focusNode: firstFocus,
-                  onPressed: _wrap(() => onZap(-1)),
-                ),
+                if (live)
+                  _OverlayButton(
+                    icon: Icons.skip_previous,
+                    label: l.previousChannel,
+                    focusNode: firstFocus,
+                    onPressed: _wrap(() => onZap(-1)),
+                  ),
                 _OverlayButton(
                   icon: playing ? Icons.pause : Icons.play_arrow,
                   label: playing ? l.pause : l.play,
+                  focusNode: live ? null : firstFocus,
                   onPressed: _wrap(onTogglePause),
                 ),
-                _OverlayButton(
-                  icon: Icons.skip_next,
-                  label: l.nextChannel,
-                  onPressed: _wrap(() => onZap(1)),
-                ),
-                _OverlayButton(
-                  icon: (channel?.isFavorite ?? false)
-                      ? Icons.star
-                      : Icons.star_border,
-                  label: l.favorite,
-                  onPressed: _wrap(onToggleFavorite),
-                ),
+                if (live) ...[
+                  _OverlayButton(
+                    icon: Icons.skip_next,
+                    label: l.nextChannel,
+                    onPressed: _wrap(() => onZap(1)),
+                  ),
+                  _OverlayButton(
+                    icon: (channel?.isFavorite ?? false)
+                        ? Icons.star
+                        : Icons.star_border,
+                    label: l.favorite,
+                    onPressed: _wrap(onToggleFavorite),
+                  ),
+                ],
                 if (caps.supportsTrackSelection && audioTracks != null)
                   _OverlayButton(
                     icon: Icons.audiotrack,

@@ -115,14 +115,18 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
     if (st.status == PlaybackStatus.failed) return KeyEventResult.ignored;
 
     final key = event.logicalKey;
-    if (key == LogicalKeyboardKey.arrowUp ||
-        key == LogicalKeyboardKey.channelUp) {
-      unawaited(_player.zap(-1));
-      return KeyEventResult.handled;
-    }
-    if (key == LogicalKeyboardKey.arrowDown ||
-        key == LogicalKeyboardKey.channelDown) {
-      unawaited(_player.zap(1));
+    final zapUp =
+        key == LogicalKeyboardKey.arrowUp ||
+        key == LogicalKeyboardKey.channelUp;
+    final zapDown =
+        key == LogicalKeyboardKey.arrowDown ||
+        key == LogicalKeyboardKey.channelDown;
+    if (zapUp || zapDown) {
+      if (st.isLive) {
+        unawaited(_player.zap(zapUp ? -1 : 1));
+      } else {
+        _showOverlay();
+      }
       return KeyEventResult.handled;
     }
     if (key == LogicalKeyboardKey.arrowLeft ||
@@ -285,7 +289,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
             channelName: channel?.name ?? '',
             retryFocus: _retryFocus,
             onRetry: () => unawaited(_player.retry()),
-            onNext: () => unawaited(_player.zap(1)),
+            onNext: st.isLive ? () => unawaited(_player.zap(1)) : null,
             onBack: () => Navigator.of(context).maybePop(),
           ),
         if (_overlay && st.status != PlaybackStatus.failed)
@@ -352,7 +356,9 @@ class _ErrorPanel extends StatelessWidget {
   final String channelName;
   final FocusNode retryFocus;
   final VoidCallback onRetry;
-  final VoidCallback onNext;
+
+  /// Nulo fora do ao vivo: filme, episódio e catch-up não têm próximo canal.
+  final VoidCallback? onNext;
   final VoidCallback onBack;
 
   @override
@@ -394,12 +400,13 @@ class _ErrorPanel extends StatelessWidget {
                   focusNode: retryFocus,
                   onPressed: onRetry,
                 ),
-                AppButton(
-                  label: l.nextChannel,
-                  icon: Icons.skip_next,
-                  primary: false,
-                  onPressed: onNext,
-                ),
+                if (onNext != null)
+                  AppButton(
+                    label: l.nextChannel,
+                    icon: Icons.skip_next,
+                    primary: false,
+                    onPressed: onNext,
+                  ),
                 AppButton(
                   label: l.back,
                   icon: Icons.arrow_back,

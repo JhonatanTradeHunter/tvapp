@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:tvapp/core/data/source/playlist_loader.dart';
+import 'package:tvapp/core/data/xtream/xtream_client.dart';
 import 'package:tvapp/core/models/playlist_source.dart';
 
 class ConnectionReport {
@@ -42,6 +43,10 @@ class ConnectionTester {
     try {
       if (source.kind == SourceKind.localFile) {
         return await _testFile(source.location, clock);
+      }
+      final credentials = source.xtream;
+      if (source.kind == SourceKind.xtream && credentials != null) {
+        return await _testXtream(credentials, clock);
       }
       final uri = source.remoteUri;
       if (uri == null) {
@@ -88,6 +93,26 @@ class ConnectionTester {
         error: SourceError.unknown,
       );
     }
+  }
+
+  /// Xtream é importado pelo `player_api.php`, então o teste usa a mesma
+  /// porta de entrada: autentica e confere se a conta está ativa.
+  Future<ConnectionReport> _testXtream(
+    XtreamCredentials credentials,
+    Stopwatch clock,
+  ) async {
+    final account = await XtreamClient(
+      credentials,
+      clientFactory: _clientFactory,
+      timeout: timeout,
+    ).authenticate();
+    final active = account.isActive;
+    return ConnectionReport(
+      ok: active,
+      elapsed: clock.elapsed,
+      contentType: 'application/json',
+      error: active ? null : SourceError.credentials,
+    );
   }
 
   Future<ConnectionReport> _testFile(String path, Stopwatch clock) async {
