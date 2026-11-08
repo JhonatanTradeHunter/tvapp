@@ -67,6 +67,18 @@ class XtreamCredentials {
     );
   }
 
+  /// Endpoint de-facto `xmltv.php` do Xtream, com as mesmas credenciais.
+  Uri xmltvUri() {
+    final base = baseUri;
+    return base.replace(
+      path: '${base.path}/xmltv.php',
+      queryParameters: <String, String>{
+        'username': username,
+        'password': password,
+      },
+    );
+  }
+
   Uri m3uUri({String output = defaultOutput}) {
     final base = baseUri;
     return base.replace(

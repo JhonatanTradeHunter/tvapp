@@ -115,6 +115,7 @@ class EpgRefreshState {
 /// sessão para cada (fonte, URL); [refreshNow] ignora esse limite.
 class EpgRefresher extends Notifier<EpgRefreshState> {
   final Set<String> _attempted = <String>{};
+  final Set<int> _recovered = <int>{};
   ImportCancelToken? _cancel;
 
   @override
@@ -157,7 +158,14 @@ class EpgRefresher extends Notifier<EpgRefreshState> {
       if (state.phase == EpgRefreshPhase.running || _playerActive) return;
       final row = ref.read(activeSourceRowProvider).valueOrNull;
       if (row == null) return;
-      if (!ref.read(epgRepositoryProvider).isStale(row, DateTime.now())) return;
+      final repository = ref.read(epgRepositoryProvider);
+      if (EpgRepository.needsMetadata(row) && _recovered.add(row.id)) {
+        // A gravação na fonte faz a linha ativa reemitir e passar por aqui
+        // de novo, já com a URL do guia.
+        unawaited(repository.recoverMetadata(row.id));
+        return;
+      }
+      if (!repository.isStale(row, DateTime.now())) return;
       if (!_attempted.add('${row.id}|${row.epgUrl}')) return;
       unawaited(_run(row.id));
     });

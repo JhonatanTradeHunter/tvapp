@@ -182,21 +182,11 @@ class SourceRepository {
   Future<bool> toggleFavorite(Channel channel) =>
       _db.channelDao.toggleFavorite(channel.sourceId, channel.channelKey);
 
-  /// Endpoint de-facto `xmltv.php` do Xtream, com as mesmas credenciais.
   String? _xtreamEpgUrl(PlaylistSource source) {
     final creds = source.xtream;
     if (source.kind != SourceKind.xtream || creds == null) return null;
     try {
-      final base = creds.baseUri;
-      return base
-          .replace(
-            path: '${base.path}/xmltv.php',
-            queryParameters: <String, String>{
-              'username': creds.username,
-              'password': creds.password,
-            },
-          )
-          .toString();
+      return creds.xmltvUri().toString();
     } on SourceException {
       return null;
     }

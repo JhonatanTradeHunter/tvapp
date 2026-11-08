@@ -47,7 +47,11 @@ class _SetupScreenState extends ConsumerState<SetupScreen>
       );
     }
     ref.read(setupControllerProvider.notifier).reset();
-    if (!widget.initial) Navigator.of(context).maybePop();
+    // pop direto: o PopScope desta tela ainda está com canPop falso (montado
+    // durante a importação), então maybePop seria recusado.
+    if (!widget.initial && (ModalRoute.of(context)?.isCurrent ?? false)) {
+      Navigator.of(context).pop();
+    }
   }
 
   @override
