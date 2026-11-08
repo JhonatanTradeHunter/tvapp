@@ -260,5 +260,14 @@
       }
     }
   },
-  "detailsLoadFailed": "Não foi possível carregar os detalhes"
+  "detailsLoadFailed": "Não foi possível carregar os detalhes",
+  "resumeFrom": "Continuar de {time}",
+  "startOver": "Do início",
+  "@resumeFrom": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  }
 }

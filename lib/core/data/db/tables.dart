@@ -141,3 +141,18 @@ class SeriesItems extends Table {
   TextColumn get categoryName => text()();
   DateTimeColumn get lastModified => dateTime().nullable()();
 }
+
+/// Onde o usuário parou em filmes e episódios. `itemKey` é `movie|id` ou
+/// `episode|id`, por fonte.
+@DataClassName('PlaybackPositionRow')
+class PlaybackPositions extends Table {
+  IntColumn get sourceId =>
+      integer().references(Sources, #id, onDelete: KeyAction.cascade)();
+  TextColumn get itemKey => text()();
+  IntColumn get positionMs => integer()();
+  IntColumn get durationMs => integer()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {sourceId, itemKey};
+}

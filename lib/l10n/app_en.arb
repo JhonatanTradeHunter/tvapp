@@ -113,5 +113,7 @@
   "durationMinutes": "{minutes} min",
   "seasonNumber": "Season {number}",
   "episodeLabel": "S{season} E{episode}",
-  "detailsLoadFailed": "Could not load the details"
+  "detailsLoadFailed": "Could not load the details",
+  "resumeFrom": "Resume from {time}",
+  "startOver": "From the start"
 }

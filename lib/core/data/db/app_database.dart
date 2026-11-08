@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:tvapp/core/data/db/daos/channel_dao.dart';
 import 'package:tvapp/core/data/db/daos/epg_dao.dart';
+import 'package:tvapp/core/data/db/daos/position_dao.dart';
 import 'package:tvapp/core/data/db/daos/source_dao.dart';
 import 'package:tvapp/core/data/db/daos/vod_dao.dart';
 import 'package:tvapp/core/data/db/tables.dart';
@@ -22,8 +23,9 @@ part 'app_database.g.dart';
     Programmes,
     VodItems,
     SeriesItems,
+    PlaybackPositions,
   ],
-  daos: [ChannelDao, SourceDao, EpgDao, VodDao],
+  daos: [ChannelDao, SourceDao, EpgDao, VodDao, PositionDao],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
@@ -31,7 +33,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -50,6 +52,9 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(seriesItems);
         await m.createIndex(idxVodListing);
         await m.createIndex(idxSeriesListing);
+      }
+      if (from < 4) {
+        await m.createTable(playbackPositions);
       }
     },
     beforeOpen: (details) async {

@@ -85,6 +85,7 @@ final playbackControllerProvider =
 /// pula para o próximo da lista com um evento para o toast.
 class PlaybackController extends Notifier<PlayerViewState> {
   static const Duration bufferingLimit = Duration(seconds: 15);
+  static const Duration positionInterval = Duration(seconds: 5);
 
   final StreamController<PlayerEvent> _events =
       StreamController<PlayerEvent>.broadcast();
@@ -96,6 +97,8 @@ class PlaybackController extends Notifier<PlayerViewState> {
   int _candidateIndex = 0;
   MediaRequest? _request;
   Uri? _catchupUri;
+  String? _positionKey;
+  Timer? _positionTimer;
   PlaybackError? _lastError;
   Timer? _watchdog;
   DateTime? _stalledSince;
@@ -108,6 +111,7 @@ class PlaybackController extends Notifier<PlayerViewState> {
   PlayerViewState build() {
     ref.onDispose(() {
       _watchdog?.cancel();
+      _positionTimer?.cancel();
       _engine?.state.removeListener(_onEngineState);
       unawaited(_engine?.dispose());
       unawaited(_events.close());
@@ -118,7 +122,9 @@ class PlaybackController extends Notifier<PlayerViewState> {
 
   Future<void> playChannel(Channel channel, {List<Channel>? playlist}) async {
     if (playlist != null) _playlist = List<Channel>.unmodifiable(playlist);
+    await _flushPosition();
     _catchupUri = null;
+    _positionKey = null;
     final seq = ++_seq;
     final Uri uri;
     try {
@@ -141,9 +147,42 @@ class PlaybackController extends Notifier<PlayerViewState> {
     List<Channel>? playlist,
   }) async {
     if (playlist != null) _playlist = List<Channel>.unmodifiable(playlist);
+    await _flushPosition();
     _catchupUri = uri;
+    _positionKey = null;
     final seq = ++_seq;
     await _start(seq, channel, uri, isLive: false);
+  }
+
+  /// Filme ou episódio. A posição vai para o banco a cada
+  /// [positionInterval] e ao sair, sob `item.channelKey`.
+  Future<void> playVod(Channel item, Uri uri, {Duration? resumeAt}) async {
+    await _flushPosition();
+    _playlist = const <Channel>[];
+    _catchupUri = uri;
+    _positionKey = item.channelKey;
+    final seq = ++_seq;
+    await _start(seq, item, uri, isLive: false, startAt: resumeAt);
+  }
+
+  Future<void> _flushPosition() async {
+    final key = _positionKey;
+    final channel = state.channel;
+    if (key == null || channel == null) return;
+    if (state.duration <= Duration.zero) return;
+    await ref
+        .read(databaseProvider)
+        .positionDao
+        .save(channel.sourceId, key, state.position, state.duration);
+  }
+
+  void _startPositionTimer(int seq) {
+    _positionTimer?.cancel();
+    if (_positionKey == null) return;
+    _positionTimer = Timer.periodic(positionInterval, (_) {
+      if (seq != _seq) return;
+      if (state.status == PlaybackStatus.playing) unawaited(_flushPosition());
+    });
   }
 
   void _resetAttempt() {
@@ -157,6 +196,7 @@ class PlaybackController extends Notifier<PlayerViewState> {
     Channel channel,
     Uri uri, {
     required bool isLive,
+    Duration? startAt,
   }) async {
     _resetAttempt();
     _request = MediaRequest(
@@ -177,14 +217,17 @@ class PlaybackController extends Notifier<PlayerViewState> {
       status: PlaybackStatus.opening,
       isLive: isLive,
     );
-    await _tryCandidates(seq, channel, null);
+    _startPositionTimer(seq);
+    await _tryCandidates(seq, channel, startAt);
   }
 
   Future<void> retry() async {
     final channel = state.channel;
     if (channel == null) return;
     final catchup = _catchupUri;
-    if (catchup != null) {
+    if (catchup != null && _positionKey != null) {
+      await playVod(channel, catchup, resumeAt: state.position);
+    } else if (catchup != null) {
       await playCatchup(channel, catchup);
     } else {
       await playChannel(channel);
@@ -225,6 +268,10 @@ class PlaybackController extends Notifier<PlayerViewState> {
   }
 
   Future<void> stop() async {
+    await _flushPosition();
+    _positionTimer?.cancel();
+    _positionTimer = null;
+    _positionKey = null;
     _seq++;
     _opened = false;
     _watchdog?.cancel();

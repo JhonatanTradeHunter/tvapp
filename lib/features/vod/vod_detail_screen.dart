@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tvapp/core/data/db/app_database.dart';
+import 'package:tvapp/core/data/providers.dart';
 import 'package:tvapp/core/data/xtream/xtream_models.dart';
 import 'package:tvapp/core/player/playback_controller.dart';
 import 'package:tvapp/core/ui/adaptive/device_mode.dart';
@@ -16,12 +17,15 @@ void _play(
   BuildContext context,
   WidgetRef ref,
   Uri url, {
+  required VodTab kind,
   required int id,
   required int sourceId,
   required String title,
   String? image,
+  Duration? resumeAt,
 }) {
   final item = playableItem(
+    kind: kind,
     id: id,
     sourceId: sourceId,
     title: title,
@@ -29,11 +33,20 @@ void _play(
     image: image,
   );
   unawaited(
-    ref.read(playbackControllerProvider.notifier).playCatchup(item, url),
+    ref
+        .read(playbackControllerProvider.notifier)
+        .playVod(item, url, resumeAt: resumeAt),
   );
   Navigator.of(
     context,
   ).push(MaterialPageRoute<void>(builder: (_) => const PlayerScreen()));
+}
+
+String _clock(Duration d) {
+  final h = d.inHours;
+  final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+  final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+  return h > 0 ? '$h:$m:$s' : '$m:$s';
 }
 
 String? _minutes(int? seconds, AppLocalizations l) =>
@@ -49,6 +62,30 @@ class MovieDetailScreen extends ConsumerWidget {
     final l = AppLocalizations.of(context);
     final client = ref.watch(xtreamClientProvider);
     final info = ref.watch(vodInfoProvider(movie.streamId)).valueOrNull;
+    final resume = ref
+        .watch(
+          resumePointProvider((
+            movie.sourceId,
+            vodItemKey(VodTab.movies, movie.streamId),
+          )),
+        )
+        .valueOrNull;
+    final void Function(Duration? at)? play = client == null
+        ? null
+        : (at) => _play(
+            context,
+            ref,
+            client.movieUrl(
+              movie.streamId,
+              extension: info?.containerExtension ?? movie.extension,
+            ),
+            kind: VodTab.movies,
+            id: movie.streamId,
+            sourceId: movie.sourceId,
+            title: movie.name,
+            image: movie.icon,
+            resumeAt: at,
+          );
     final facts = <String>[
       ?info?.releaseDate,
       ?info?.genre,
@@ -62,24 +99,19 @@ class MovieDetailScreen extends ConsumerWidget {
       plot: info?.plot,
       people: info?.cast,
       actions: [
+        if (resume != null)
+          AppButton(
+            label: l.resumeFrom(_clock(resume)),
+            icon: Icons.play_arrow,
+            autofocus: true,
+            onPressed: play == null ? null : () => play(resume),
+          ),
         AppButton(
-          label: l.play,
-          icon: Icons.play_arrow,
-          autofocus: true,
-          onPressed: client == null
-              ? null
-              : () => _play(
-                  context,
-                  ref,
-                  client.movieUrl(
-                    movie.streamId,
-                    extension: info?.containerExtension ?? movie.extension,
-                  ),
-                  id: movie.streamId,
-                  sourceId: movie.sourceId,
-                  title: movie.name,
-                  image: movie.icon,
-                ),
+          label: resume == null ? l.play : l.startOver,
+          icon: resume == null ? Icons.play_arrow : Icons.replay,
+          primary: resume == null,
+          autofocus: resume == null,
+          onPressed: play == null ? null : () => play(null),
         ),
         AppButton(
           label: l.back,
@@ -157,19 +189,29 @@ class _SeriesDetailState extends ConsumerState<SeriesDetailScreen> {
                   autofocus: i == 0,
                   onSelect: client == null
                       ? null
-                      : () => _play(
-                          context,
-                          ref,
-                          client.episodeUrl(
-                            e.id,
-                            extension: e.containerExtension,
-                          ),
-                          id: e.id,
-                          sourceId: series.sourceId,
-                          title:
-                              '${series.name} · ${l.episodeLabel(e.season, e.episodeNum)}',
-                          image: e.image ?? series.cover,
-                        ),
+                      : () async {
+                          final key = vodItemKey(VodTab.series, e.id);
+                          final at = await ref
+                              .read(databaseProvider)
+                              .positionDao
+                              .resumePoint(series.sourceId, key);
+                          if (!context.mounted) return;
+                          _play(
+                            context,
+                            ref,
+                            client.episodeUrl(
+                              e.id,
+                              extension: e.containerExtension,
+                            ),
+                            kind: VodTab.series,
+                            id: e.id,
+                            sourceId: series.sourceId,
+                            title:
+                                '${series.name} · ${l.episodeLabel(e.season, e.episodeNum)}',
+                            image: e.image ?? series.cover,
+                            resumeAt: at,
+                          );
+                        },
                 );
               },
             ),

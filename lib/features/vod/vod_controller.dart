@@ -72,18 +72,32 @@ final seriesInfoProvider = FutureProvider.autoDispose
       return client.seriesInfo(seriesId);
     });
 
+/// Chave da posição salva e do canal sintético: `movie|id` ou `episode|id`.
+String vodItemKey(VodTab kind, int id) =>
+    '${kind == VodTab.movies ? 'movie' : 'episode'}|$id';
+
+/// Onde o usuário parou; nulo quando não há o que retomar.
+final resumePointProvider = StreamProvider.autoDispose
+    .family<Duration?, (int, String)>((ref, key) {
+      return ref
+          .watch(databaseProvider)
+          .positionDao
+          .watchResumePoint(key.$1, key.$2);
+    });
+
 /// O player trabalha com [Channel]; filmes e episódios entram como um
 /// canal sintético de id negativo, sem lista para zapear.
 Channel playableItem({
+  required VodTab kind,
   required int id,
   required int sourceId,
   required String title,
   required Uri url,
   String? image,
 }) => Channel(
-  id: -id,
+  id: kind == VodTab.movies ? -id : -(id + 1000000000),
   sourceId: sourceId,
-  channelKey: 'vod|$id',
+  channelKey: vodItemKey(kind, id),
   position: 0,
   name: title,
   group: '',
