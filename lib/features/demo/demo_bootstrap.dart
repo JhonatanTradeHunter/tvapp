@@ -49,7 +49,7 @@ class DemoBootstrap {
     );
 
     final playlist = (await assets.loadString(
-      'assets/demo/demo.m3u',
+      'assets/demo/demo.m3u.txt',
     )).replaceAll('{{BASE}}', base);
     await M3uImporter(useIsolate: false).run(
       bytes: Stream<List<int>>.value(utf8.encode(playlist)),

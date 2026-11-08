@@ -51,7 +51,7 @@ void main() {
     expect(channels.map((c) => c.name), ['Demo HLS', 'Demo HLS 2', 'Demo MP4']);
     expect(
       channels.first.playbackUrl,
-      'http://localhost/assets/assets/demo/clip.m3u8',
+      'http://localhost/assets/assets/demo/clip.mp4?canal=1',
     );
     expect(channels.first.catchup, 'default');
 
