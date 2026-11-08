@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tv generator-info-name="tvapp-demo">
+  <channel id="demo.hls"><display-name lang="pt">Demo HLS</display-name></channel>
+  <channel id="demo.hls2"><display-name lang="pt">Demo HLS 2</display-name></channel>
+  <channel id="demo.mp4"><display-name lang="pt">Demo MP4</display-name></channel>
+  <programme start="{{T-90}}" stop="{{T-30}}" channel="demo.hls">
+    <title lang="pt">Programa anterior</title>
+    <desc lang="pt">Já terminou. Abra para assistir pelo catch-up.</desc>
+    <category lang="pt">Demonstração</category>
+  </programme>
+  <programme start="{{T-30}}" stop="{{T+30}}" channel="demo.hls">
+    <title lang="pt">No ar agora</title>
+    <desc lang="pt">Programa em exibição neste momento.</desc>
+    <category lang="pt">Demonstração</category>
+  </programme>
+  <programme start="{{T+30}}" stop="{{T+90}}" channel="demo.hls">
+    <title lang="pt">A seguir</title>
+    <desc lang="pt">Começa depois do programa atual.</desc>
+    <category lang="pt">Demonstração</category>
+  </programme>
+  <programme start="{{T+90}}" stop="{{T+150}}" channel="demo.hls">
+    <title lang="pt">Mais tarde</title>
+    <desc lang="pt">Fecha a janela de programação da demonstração.</desc>
+    <category lang="pt">Demonstração</category>
+  </programme>
+  <programme start="{{T-90}}" stop="{{T-30}}" channel="demo.hls2">
+    <title lang="pt">Programa anterior</title>
+    <desc lang="pt">Já terminou. Abra para assistir pelo catch-up.</desc>
+    <category lang="pt">Demonstração</category>
+  </programme>
+  <programme start="{{T-30}}" stop="{{T+30}}" channel="demo.hls2">
+    <title lang="pt">No ar agora</title>
+    <desc lang="pt">Programa em exibição neste momento.</desc>
+    <category lang="pt">Demonstração</category>
+  </programme>
+  <programme start="{{T+30}}" stop="{{T+90}}" channel="demo.hls2">
+    <title lang="pt">A seguir</title>
+    <desc lang="pt">Começa depois do programa atual.</desc>
+    <category lang="pt">Demonstração</category>
+  </programme>
+  <programme start="{{T+90}}" stop="{{T+150}}" channel="demo.hls2">
+    <title lang="pt">Mais tarde</title>
+    <desc lang="pt">Fecha a janela de programação da demonstração.</desc>
+    <category lang="pt">Demonstração</category>
+  </programme>
+  <programme start="{{T-90}}" stop="{{T-30}}" channel="demo.mp4">
+    <title lang="pt">Programa anterior</title>
+    <desc lang="pt">Já terminou. Abra para assistir pelo catch-up.</desc>
+    <category lang="pt">Demonstração</category>
+  </programme>
+  <programme start="{{T-30}}" stop="{{T+30}}" channel="demo.mp4">
+    <title lang="pt">No ar agora</title>
+    <desc lang="pt">Programa em exibição neste momento.</desc>
+    <category lang="pt">Demonstração</category>
+  </programme>
+  <programme start="{{T+30}}" stop="{{T+90}}" channel="demo.mp4">
+    <title lang="pt">A seguir</title>
+    <desc lang="pt">Começa depois do programa atual.</desc>
+    <category lang="pt">Demonstração</category>
+  </programme>
+  <programme start="{{T+90}}" stop="{{T+150}}" channel="demo.mp4">
+    <title lang="pt">Mais tarde</title>
+    <desc lang="pt">Fecha a janela de programação da demonstração.</desc>
+    <category lang="pt">Demonstração</category>
+  </programme>
+</tv>
