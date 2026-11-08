@@ -155,7 +155,7 @@ class SourceRepository {
     ImportCancelToken? cancel,
     void Function(ImportProgress progress)? onProgress,
   ) async {
-    final result = await _xtreamImporter.run(
+    final run = await _xtreamImporter.run(
       client: _xtreamClientFactory(credentials),
       cancel: cancel,
       onProgress: onProgress,
@@ -166,7 +166,11 @@ class SourceRepository {
       seriesSink: (batch, start, names) =>
           _db.vodDao.insertSeries(sourceId, generation, start, batch, names),
     );
-    return result.toImportResult();
+    await _db.sourceDao.updateSource(
+      sourceId,
+      SourcesCompanion(serverTimezone: Value(run.account.serverTimezone)),
+    );
+    return run.toImportResult();
   }
 
   Future<ImportResult> refresh(

@@ -1,3 +1,5 @@
+import 'package:timezone/data/latest_all.dart' as tzdata;
+import 'package:timezone/timezone.dart' as tz;
 import 'package:tvapp/core/models/channel.dart';
 
 /// Monta a URL de catch-up a partir dos atributos M3U do canal (`catchup`,
@@ -35,6 +37,7 @@ class CatchupUrlBuilder {
     required DateTime start,
     required DateTime end,
     DateTime? now,
+    String? timezone,
   }) {
     final mode = (channel.catchup ?? '').trim().toLowerCase();
     final source = _nonEmpty(channel.catchupSource);
@@ -57,7 +60,7 @@ class CatchupUrlBuilder {
       case 'fs':
         return _flussonic(live, s, e);
       case 'xc':
-        return _xtream(live, s, e);
+        return _xtream(live, s, e, timezone);
       default:
         if (source == null) return null;
         template = _hasScheme(source) ? source : _append(live, source);
@@ -143,9 +146,9 @@ class CatchupUrlBuilder {
 
   /// Xtream Codes: a live `/{user}/{pass}/{id}` ou `/live/{user}/{pass}/{id}.ext`
   /// vira `/timeshift/{user}/{pass}/{minutos}/{Y-m-d:H-M}/{id}.ext`.
-  /// O horário vai em UTC; servidores configurados em horário local podem
-  /// precisar de ajuste, o que só aparece testando contra a fonte real.
-  static Uri? _xtream(String live, DateTime s, DateTime e) {
+  /// O início vai no fuso do painel ([timezone], de `server_info.timezone`);
+  /// sem fuso informado ou com nome desconhecido, vai em UTC.
+  static Uri? _xtream(String live, DateTime s, DateTime e, String? timezone) {
     final uri = Uri.tryParse(live);
     if (uri == null || uri.host.isEmpty) return null;
     final segments = uri.pathSegments.where((x) => x.isNotEmpty).toList();
@@ -158,9 +161,10 @@ class CatchupUrlBuilder {
     final id = dot > 0 ? file.substring(0, dot) : file;
     final ext = dot > 0 ? file.substring(dot + 1) : 'ts';
     final minutes = (e.difference(s).inSeconds / 60).ceil();
+    final local = inZone(s, timezone);
     final stamp =
-        '${_pad(s.year, 4)}-${_pad(s.month, 2)}-${_pad(s.day, 2)}:'
-        '${_pad(s.hour, 2)}-${_pad(s.minute, 2)}';
+        '${_pad(local.year, 4)}-${_pad(local.month, 2)}-${_pad(local.day, 2)}:'
+        '${_pad(local.hour, 2)}-${_pad(local.minute, 2)}';
     return Uri(
       scheme: uri.scheme,
       host: uri.host,
@@ -174,6 +178,23 @@ class CatchupUrlBuilder {
         '$id.$ext',
       ],
     );
+  }
+
+  static bool _zonesLoaded = false;
+
+  /// [utc] no fuso IANA [zone]. Carrega a base de fusos na primeira chamada.
+  static DateTime inZone(DateTime utc, String? zone) {
+    final name = zone?.trim();
+    if (name == null || name.isEmpty) return utc.toUtc();
+    try {
+      if (!_zonesLoaded) {
+        tzdata.initializeTimeZones();
+        _zonesLoaded = true;
+      }
+      return tz.TZDateTime.from(utc, tz.getLocation(name));
+    } catch (_) {
+      return utc.toUtc();
+    }
   }
 
   static String _append(String live, String suffix) {

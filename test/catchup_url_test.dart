@@ -72,6 +72,27 @@ void main() {
     );
   });
 
+  test('xc formata o início no fuso do painel', () {
+    final c = _channel('http://srv:8080/live/user/pass/123.ts', catchup: 'xc');
+    String? at(String? zone) => CatchupUrlBuilder.build(
+      c,
+      start: start,
+      end: end,
+      now: now,
+      timezone: zone,
+    )?.toString();
+    expect(
+      at('America/Sao_Paulo'),
+      'http://srv:8080/timeshift/user/pass/60/2026-11-08:17-05/123.ts',
+    );
+    expect(
+      at('Europe/Lisbon'),
+      'http://srv:8080/timeshift/user/pass/60/2026-11-08:20-05/123.ts',
+    );
+    expect(at('Zona/Inexistente'), contains('2026-11-08:20-05'));
+    expect(at(null), contains('2026-11-08:20-05'));
+  });
+
   test('placeholders de data, offset e formato com \$', () {
     final out = CatchupUrlBuilder.fill(
       '/{Y}/{m}/{d}/{H}{M}{S}?o={offset}&t=\${start:Y-m-d_H-M}',

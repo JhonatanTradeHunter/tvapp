@@ -159,6 +159,10 @@ class _GuideScreenState extends ConsumerState<GuideScreen> {
             start: programme.startUtc,
             end: programme.stopUtc,
             now: now,
+            timezone: ref
+                .read(activeSourceRowProvider)
+                .valueOrNull
+                ?.serverTimezone,
           )
         : null;
     unawaited(

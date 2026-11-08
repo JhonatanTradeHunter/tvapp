@@ -17,6 +17,10 @@ class Sources extends Table {
   TextColumn get epgUrl => text().nullable()();
   IntColumn get epgGeneration => integer().withDefault(const Constant(0))();
   DateTimeColumn get epgRefresh => dateTime().nullable()();
+
+  /// Fuso IANA declarado pelo painel Xtream (`server_info.timezone`).
+  /// O timeshift recebe o horário de início nesse fuso.
+  TextColumn get serverTimezone => text().nullable()();
 }
 
 @DataClassName('ChannelRow')
