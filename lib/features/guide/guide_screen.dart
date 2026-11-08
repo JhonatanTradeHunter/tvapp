@@ -14,7 +14,9 @@ import 'package:tvapp/core/ui/components/empty_state.dart';
 import 'package:tvapp/features/guide/guide_controller.dart';
 import 'package:tvapp/features/guide/guide_grid.dart';
 import 'package:tvapp/features/guide/programme_details.dart';
+import 'package:tvapp/core/data/profiles/profile_providers.dart';
 import 'package:tvapp/features/live/live_controller.dart';
+import 'package:tvapp/features/live/player/parental_gate.dart';
 import 'package:tvapp/features/live/player/player_screen.dart';
 import 'package:tvapp/l10n/gen/app_localizations.dart';
 
@@ -130,6 +132,22 @@ class _GuideScreenState extends ConsumerState<GuideScreen> {
     ).push(MaterialPageRoute<void>(builder: (_) => const PlayerScreen()));
   }
 
+  /// Catch-up de programa acima da idade do perfil infantil pede o PIN de
+  /// responsável antes de tocar.
+  Future<void> _playCatchupGuarded(
+    Channel channel,
+    ProgrammeRow programme,
+    Uri uri,
+    List<Channel> all,
+  ) async {
+    final policy = ref.read(parentalPolicyProvider);
+    if (!policy.allowsProgramme(programme.ageRating)) {
+      final ok = await askGuardianPin(context, ref);
+      if (!ok || !mounted) return;
+    }
+    _playCatchup(channel, uri, all);
+  }
+
   void _playCatchup(Channel channel, Uri uri, List<Channel> all) {
     unawaited(
       ref
@@ -174,7 +192,9 @@ class _GuideScreenState extends ConsumerState<GuideScreen> {
         onWatchLive: () => _play(channel, all),
         onCatchup: catchup == null
             ? null
-            : () => _playCatchup(channel, catchup, all),
+            : () => unawaited(
+                _playCatchupGuarded(channel, programme, catchup, all),
+              ),
       ),
     );
   }

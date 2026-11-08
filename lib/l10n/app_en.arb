@@ -149,5 +149,9 @@
   "save": "Save",
   "deleteProfile": "Delete profile",
   "deleteProfileConfirm": "Delete {name}? This profile's saved positions and hidden groups go too.",
-  "kidsSettingsLocked": "Source and profiles can only be changed from an adult profile."
+  "kidsSettingsLocked": "Source and profiles can only be changed from an adult profile.",
+  "parentalBlockedTitle": "Blocked by age rating",
+  "parentalBlockedMessage": "{title} is rated {age}+.",
+  "parentalUnlock": "Unlock with PIN",
+  "parentalNoGuardian": "To unlock, a guardian needs to set a PIN on an adult profile."
 }

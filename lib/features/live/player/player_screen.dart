@@ -11,6 +11,7 @@ import 'package:tvapp/core/ui/adaptive/device_mode.dart';
 import 'package:tvapp/core/ui/components/toast.dart';
 import 'package:tvapp/core/ui/focus/focusable_scale.dart';
 import 'package:tvapp/features/live/live_controller.dart';
+import 'package:tvapp/features/live/player/parental_gate.dart';
 import 'package:tvapp/features/live/player/player_overlay.dart';
 import 'package:tvapp/l10n/gen/app_localizations.dart';
 
@@ -31,6 +32,9 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
   final FocusNode _rootFocus = FocusNode(debugLabel: 'player-root');
   final FocusNode _overlayFocus = FocusNode(debugLabel: 'player-overlay');
   final FocusNode _retryFocus = FocusNode(debugLabel: 'player-retry');
+  final FocusNode _blockFocus = FocusNode(debugLabel: 'player-parental');
+  final Set<int> _unlockedProgrammes = <int>{};
+  int? _haltedFor;
 
   late final PlaybackController _player;
   late final bool _touch;
@@ -61,6 +65,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
     _rootFocus.dispose();
     _overlayFocus.dispose();
     _retryFocus.dispose();
+    _blockFocus.dispose();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     if (_touch) SystemChrome.setPreferredOrientations(DeviceOrientation.values);
     super.dispose();
@@ -112,7 +117,9 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
       return KeyEventResult.ignored;
     }
     final st = ref.read(playbackControllerProvider);
-    if (st.status == PlaybackStatus.failed) return KeyEventResult.ignored;
+    if (st.status == PlaybackStatus.failed || _haltedFor != null) {
+      return KeyEventResult.ignored;
+    }
 
     final key = event.logicalKey;
     final zapUp =
@@ -156,6 +163,17 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
       return KeyEventResult.handled;
     }
     return KeyEventResult.ignored;
+  }
+
+  Future<void> _unlock(int programmeId) async {
+    final ok = await askGuardianPin(context, ref);
+    if (!ok || !mounted) return;
+    setState(() {
+      _unlockedProgrammes.add(programmeId);
+      _haltedFor = null;
+    });
+    _rootFocus.requestFocus();
+    await _player.retry();
   }
 
   Future<void> _toggleFavorite() async {
@@ -276,13 +294,38 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
     final engine = st.engine;
     final error = st.error;
     final channel = st.channel;
+    final restricted = channel != null && st.isLive
+        ? ref.watch(restrictedProgrammeProvider(channel))
+        : null;
+    final blocked =
+        restricted != null && !_unlockedProgrammes.contains(restricted.id);
+    if (blocked && _haltedFor != restricted.id) {
+      _haltedFor = restricted.id;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _hideOverlay();
+        unawaited(_player.halt());
+        _blockFocus.requestFocus();
+      });
+    } else if (!blocked && _haltedFor != null) {
+      _haltedFor = null;
+    }
 
     Widget body = Stack(
       fit: StackFit.expand,
       children: [
         const ColoredBox(color: Colors.black),
-        if (engine != null) engine.buildView(context),
-        if (st.isBusy) const Center(child: CircularProgressIndicator()),
+        if (engine != null && !blocked) engine.buildView(context),
+        if (st.isBusy && !blocked)
+          const Center(child: CircularProgressIndicator()),
+        if (blocked)
+          ParentalBlockPanel(
+            programme: restricted,
+            focusNode: _blockFocus,
+            onUnlock: () => unawaited(_unlock(restricted.id)),
+            onNext: () => unawaited(_player.zap(1)),
+            onBack: () => Navigator.of(context).maybePop(),
+          ),
         if (st.status == PlaybackStatus.failed && error != null)
           _ErrorPanel(
             error: error,
@@ -292,7 +335,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
             onNext: st.isLive ? () => unawaited(_player.zap(1)) : null,
             onBack: () => Navigator.of(context).maybePop(),
           ),
-        if (_overlay && st.status != PlaybackStatus.failed)
+        if (_overlay && st.status != PlaybackStatus.failed && !blocked)
           PlayerOverlay(
             state: st,
             firstFocus: _overlayFocus,

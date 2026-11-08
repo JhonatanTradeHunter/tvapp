@@ -331,5 +331,19 @@
       }
     }
   },
-  "kidsSettingsLocked": "Fonte e perfis só podem ser alterados num perfil adulto."
+  "kidsSettingsLocked": "Fonte e perfis só podem ser alterados num perfil adulto.",
+  "parentalBlockedTitle": "Bloqueado pela classificação",
+  "parentalBlockedMessage": "{title} é para maiores de {age} anos.",
+  "parentalUnlock": "Desbloquear com PIN",
+  "parentalNoGuardian": "Para liberar, um responsável precisa definir PIN num perfil adulto.",
+  "@parentalBlockedMessage": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "age": {
+        "type": "int"
+      }
+    }
+  }
 }

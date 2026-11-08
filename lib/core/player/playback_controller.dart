@@ -267,6 +267,20 @@ class PlaybackController extends Notifier<PlayerViewState> {
     await _engine?.seekTo(position);
   }
 
+  /// Para a reprodução mas mantém o canal na tela, para o bloqueio por
+  /// classificação: [retry] volta a tocar o mesmo canal depois do PIN.
+  Future<void> halt() async {
+    _seq++;
+    _opened = false;
+    _watchdog?.cancel();
+    unawaited(WakelockPlus.disable());
+    final engine = _engine;
+    _engine = null;
+    engine?.state.removeListener(_onEngineState);
+    state = PlayerViewState(channel: state.channel, isLive: state.isLive);
+    await engine?.dispose();
+  }
+
   Future<void> stop() async {
     await _flushPosition();
     _positionTimer?.cancel();
