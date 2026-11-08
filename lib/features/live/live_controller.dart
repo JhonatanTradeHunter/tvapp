@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tvapp/core/data/db/daos/profile_dao.dart';
+import 'package:tvapp/core/data/profiles/profile_providers.dart';
 import 'package:tvapp/core/data/providers.dart';
 import 'package:tvapp/core/models/channel.dart';
 import 'package:tvapp/core/models/channel_group.dart';
@@ -39,7 +41,17 @@ final groupsProvider = StreamProvider<List<ChannelGroup>>((ref) {
   if (key == null) {
     return Stream<List<ChannelGroup>>.value(const <ChannelGroup>[]);
   }
-  return ref.watch(databaseProvider).channelDao.watchGroups(key.$1, key.$2);
+  final policy = ref.watch(parentalPolicyProvider);
+  return ref
+      .watch(databaseProvider)
+      .channelDao
+      .watchGroups(key.$1, key.$2)
+      .map(
+        (groups) => <ChannelGroup>[
+          for (final g in groups)
+            if (policy.allowsGroup(BlockedKind.live, g.name)) g,
+        ],
+      );
 });
 
 final channelsProvider = StreamProvider<List<Channel>>((ref) {
@@ -47,6 +59,7 @@ final channelsProvider = StreamProvider<List<Channel>>((ref) {
   if (key == null) return Stream<List<Channel>>.value(const <Channel>[]);
   final filter = ref.watch(groupFilterProvider);
   final sort = ref.watch(liveSortProvider);
+  final policy = ref.watch(parentalPolicyProvider);
   return ref
       .watch(databaseProvider)
       .channelDao
@@ -55,6 +68,12 @@ final channelsProvider = StreamProvider<List<Channel>>((ref) {
         generation: key.$2,
         filter: filter,
         sort: sort,
+      )
+      .map(
+        (channels) => <Channel>[
+          for (final c in channels)
+            if (policy.allowsChannel(c)) c,
+        ],
       );
 });
 

@@ -10,6 +10,7 @@ class AppPrefs {
   static const String _kLiveSort = 'live.sort';
   static const String _kLastChannelKey = 'live.lastChannelKey';
   static const String _kPreferredEngine = 'player.preferredEngine';
+  static const String _kActiveProfile = 'profiles.active';
 
   LiveSort get liveSort {
     final value = _prefs.getString(_kLiveSort);
@@ -26,6 +27,12 @@ class AppPrefs {
 
   Future<void> setLastChannelKey(String key) =>
       _prefs.setString(_kLastChannelKey, key);
+
+  int? get activeProfileId => _prefs.getInt(_kActiveProfile);
+
+  Future<void> setActiveProfileId(int? id) => id == null
+      ? _prefs.remove(_kActiveProfile)
+      : _prefs.setInt(_kActiveProfile, id);
 
   EngineKind? get preferredEngine {
     final value = _prefs.getString(_kPreferredEngine);

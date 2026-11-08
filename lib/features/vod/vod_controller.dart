@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tvapp/core/data/db/app_database.dart';
+import 'package:tvapp/core/data/db/daos/profile_dao.dart';
+import 'package:tvapp/core/data/profiles/profile_providers.dart';
 import 'package:tvapp/core/data/providers.dart';
 import 'package:tvapp/core/data/xtream/xtream_client.dart';
 import 'package:tvapp/core/data/xtream/xtream_models.dart';
@@ -19,16 +21,33 @@ final xtreamClientProvider = Provider<XtreamClient?>((ref) {
 final vodCategoriesProvider = StreamProvider<List<ChannelGroup>>((ref) {
   final key = ref.watch(activeListingKeyProvider);
   if (key == null) return Stream.value(const <ChannelGroup>[]);
-  return ref.watch(databaseProvider).vodDao.watchVodCategories(key.$1, key.$2);
+  final policy = ref.watch(parentalPolicyProvider);
+  return ref
+      .watch(databaseProvider)
+      .vodDao
+      .watchVodCategories(key.$1, key.$2)
+      .map(
+        (groups) => <ChannelGroup>[
+          for (final g in groups)
+            if (policy.allowsGroup(BlockedKind.vod, g.name)) g,
+        ],
+      );
 });
 
 final seriesCategoriesProvider = StreamProvider<List<ChannelGroup>>((ref) {
   final key = ref.watch(activeListingKeyProvider);
   if (key == null) return Stream.value(const <ChannelGroup>[]);
+  final policy = ref.watch(parentalPolicyProvider);
   return ref
       .watch(databaseProvider)
       .vodDao
-      .watchSeriesCategories(key.$1, key.$2);
+      .watchSeriesCategories(key.$1, key.$2)
+      .map(
+        (groups) => <ChannelGroup>[
+          for (final g in groups)
+            if (policy.allowsGroup(BlockedKind.series, g.name)) g,
+        ],
+      );
 });
 
 /// Categoria nula = todas.
@@ -36,23 +55,39 @@ final vodItemsProvider = StreamProvider.autoDispose
     .family<List<VodItemRow>, String?>((ref, category) {
       final key = ref.watch(activeListingKeyProvider);
       if (key == null) return Stream.value(const <VodItemRow>[]);
+      final policy = ref.watch(parentalPolicyProvider);
       return ref
           .watch(databaseProvider)
           .vodDao
-          .watchVod(sourceId: key.$1, generation: key.$2, category: category);
+          .watchVod(sourceId: key.$1, generation: key.$2, category: category)
+          .map(
+            (items) => <VodItemRow>[
+              for (final i in items)
+                if (policy.allowsItem(BlockedKind.vod, i.categoryName, i.name))
+                  i,
+            ],
+          );
     });
 
 final seriesItemsProvider = StreamProvider.autoDispose
     .family<List<SeriesItemRow>, String?>((ref, category) {
       final key = ref.watch(activeListingKeyProvider);
       if (key == null) return Stream.value(const <SeriesItemRow>[]);
+      final policy = ref.watch(parentalPolicyProvider);
       return ref
           .watch(databaseProvider)
           .vodDao
-          .watchSeries(
-            sourceId: key.$1,
-            generation: key.$2,
-            category: category,
+          .watchSeries(sourceId: key.$1, generation: key.$2, category: category)
+          .map(
+            (items) => <SeriesItemRow>[
+              for (final i in items)
+                if (policy.allowsItem(
+                  BlockedKind.series,
+                  i.categoryName,
+                  i.name,
+                ))
+                  i,
+            ],
           );
     });
 
