@@ -30,7 +30,7 @@ class XtreamClient {
       queryParameters: <String, String>{
         'username': credentials.username,
         'password': credentials.password,
-        if (action != null) 'action': action,
+        'action': ?action,
         ...extra,
       },
     );
@@ -148,22 +148,18 @@ class XtreamClient {
 
   static List<XtreamCategory> _parseCategories(Object? json) =>
       <XtreamCategory>[
-        for (final item in JsonRead.list(json))
-          if (XtreamCategory.fromJson(item) case final c?) c,
+        for (final item in JsonRead.list(json)) ?XtreamCategory.fromJson(item),
       ];
 
   static List<XtreamLiveStream> _parseLive(Object? json) => <XtreamLiveStream>[
-    for (final item in JsonRead.list(json))
-      if (XtreamLiveStream.fromJson(item) case final s?) s,
+    for (final item in JsonRead.list(json)) ?XtreamLiveStream.fromJson(item),
   ];
 
   static List<XtreamVodStream> _parseVod(Object? json) => <XtreamVodStream>[
-    for (final item in JsonRead.list(json))
-      if (XtreamVodStream.fromJson(item) case final s?) s,
+    for (final item in JsonRead.list(json)) ?XtreamVodStream.fromJson(item),
   ];
 
   static List<XtreamSeries> _parseSeries(Object? json) => <XtreamSeries>[
-    for (final item in JsonRead.list(json))
-      if (XtreamSeries.fromJson(item) case final s?) s,
+    for (final item in JsonRead.list(json)) ?XtreamSeries.fromJson(item),
   ];
 }

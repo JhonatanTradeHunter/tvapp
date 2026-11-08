@@ -60,7 +60,6 @@ class JsonRead {
   }
 
   static List<String> strings(Object? value) => <String>[
-    for (final item in list(value))
-      if (string(item) case final s?) s,
+    for (final item in list(value)) ?string(item),
   ];
 }

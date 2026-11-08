@@ -313,8 +313,7 @@ class XtreamSeriesInfo {
     });
 
     final seasons = <XtreamSeason>[
-      for (final s in JsonRead.list(root['seasons']))
-        if (XtreamSeason.fromJson(s) case final season?) season,
+      for (final s in JsonRead.list(root['seasons'])) ?XtreamSeason.fromJson(s),
     ];
     final known = {for (final s in seasons) s.number};
     for (final e in episodes) {
