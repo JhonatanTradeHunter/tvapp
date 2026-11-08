@@ -32,6 +32,7 @@ class ImportResult {
     required this.duplicates,
     required this.truncated,
     required this.elapsed,
+    this.epgUrl,
   });
 
   final int imported;
@@ -39,6 +40,9 @@ class ImportResult {
   final int duplicates;
   final bool truncated;
   final Duration elapsed;
+
+  /// Primeira URL de `url-tvg`/`x-tvg-url` do cabeçalho `#EXTM3U`.
+  final String? epgUrl;
 }
 
 typedef EntrySink =
@@ -206,6 +210,18 @@ class M3uImporter {
       duplicates: duplicates,
       truncated: truncated,
       elapsed: clock.elapsed,
+      epgUrl: _firstUrl(header.urlTvg),
     );
+  }
+
+  /// `url-tvg` pode trazer várias URLs separadas por vírgula.
+  static String? _firstUrl(String? raw) {
+    if (raw == null) return null;
+    for (final part in raw.split(',')) {
+      final candidate = part.trim();
+      final uri = Uri.tryParse(candidate);
+      if (uri != null && uri.host.isNotEmpty) return candidate;
+    }
+    return null;
   }
 }

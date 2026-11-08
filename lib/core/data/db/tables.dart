@@ -14,6 +14,9 @@ class Sources extends Table {
   IntColumn get activeGeneration => integer().withDefault(const Constant(0))();
   DateTimeColumn get lastRefresh => dateTime().nullable()();
   BoolColumn get isActive => boolean().withDefault(const Constant(false))();
+  TextColumn get epgUrl => text().nullable()();
+  IntColumn get epgGeneration => integer().withDefault(const Constant(0))();
+  DateTimeColumn get epgRefresh => dateTime().nullable()();
 }
 
 @DataClassName('ChannelRow')
@@ -54,4 +57,40 @@ class Favorites extends Table {
 
   @override
   Set<Column> get primaryKey => {sourceId, channelKey};
+}
+
+/// Canais declarados no XMLTV. `xmltvId` em minúsculas, para casar com
+/// `tvg-id`; `nameNormalized` serve só ao fallback por nome.
+@DataClassName('EpgChannelRow')
+class EpgChannels extends Table {
+  IntColumn get sourceId =>
+      integer().references(Sources, #id, onDelete: KeyAction.cascade)();
+  IntColumn get generation => integer()();
+  TextColumn get xmltvId => text()();
+  TextColumn get displayName => text()();
+  TextColumn get nameNormalized => text()();
+  TextColumn get icon => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {sourceId, generation, xmltvId};
+}
+
+/// Horários sempre em UTC.
+@DataClassName('ProgrammeRow')
+@TableIndex(
+  name: 'idx_programmes_lookup',
+  columns: {#sourceId, #generation, #channelId, #startUtc},
+)
+class Programmes extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get sourceId =>
+      integer().references(Sources, #id, onDelete: KeyAction.cascade)();
+  IntColumn get generation => integer()();
+  TextColumn get channelId => text()();
+  DateTimeColumn get startUtc => dateTime()();
+  DateTimeColumn get stopUtc => dateTime()();
+  TextColumn get title => text()();
+  TextColumn get subtitle => text().nullable()();
+  TextColumn get description => text().nullable()();
+  TextColumn get category => text().nullable()();
 }
