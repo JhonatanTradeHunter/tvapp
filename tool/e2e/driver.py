@@ -110,11 +110,32 @@ def dump():
     return nodes
 
 
+SYSTEM_DIALOG = re.compile(r"isn't responding|keeps stopping|has stopped", re.I)
+dismissed = []
+
+
+def dismiss_system_dialogs(nodes):
+    """O emulador lento às vezes mostra ANR do launcher por cima do app."""
+    if not any(SYSTEM_DIALOG.search(n["label"]) for n in nodes):
+        return False
+    title = next(n["label"] for n in nodes if SYSTEM_DIALOG.search(n["label"]))
+    for n in nodes:
+        if re.fullmatch(r"Wait|Close app|OK", n["label"], re.I):
+            dismissed.append(title)
+            print(f"    diálogo do sistema fechado: {title}", flush=True)
+            tap_node(n)
+            return True
+    return False
+
+
 def find(pattern, timeout=20, cls=None):
     rx = re.compile(pattern, re.I | re.M)
     end = time.time() + timeout
     while True:
-        for n in dump():
+        nodes = dump()
+        if dismiss_system_dialogs(nodes):
+            continue
+        for n in nodes:
             if rx.search(n["label"]) and (cls is None or cls in n["cls"]):
                 return n
         if time.time() > end:
@@ -140,7 +161,10 @@ def nth_edit(index, timeout=10):
     """Campos de texto do Flutter não expõem o rótulo ao uiautomator."""
     end = time.time() + timeout
     while True:
-        edits = [n for n in dump() if n["cls"].endswith("EditText")]
+        nodes = dump()
+        if dismiss_system_dialogs(nodes):
+            continue
+        edits = [n for n in nodes if n["cls"].endswith("EditText")]
         if len(edits) > index:
             return edits[index]
         if time.time() > end:
@@ -472,6 +496,9 @@ def write_report():
         mark = "✅" if r["ok"] else ("⏭️" if r["ok"] is None else "❌")
         detail = (r["detail"] or "").replace("|", "/")
         lines.append(f"| {mark} | {r['name']} | {detail} | {r['shot'] or ''} |")
+    if dismissed:
+        lines.append("")
+        lines.append("Diálogos do sistema fechados durante o teste: " + "; ".join(sorted(set(dismissed))))
     with open(os.path.join(OUT, "report.md"), "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
     return bad
