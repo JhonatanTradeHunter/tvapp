@@ -36,6 +36,7 @@ class GroupList extends StatelessWidget {
     return <_GroupEntry>[
       _GroupEntry(const GroupFilter.all(), l.allChannels, total),
       _GroupEntry(const GroupFilter.favorites(), l.favorites, null),
+      _GroupEntry(const GroupFilter.recent(), l.recentChannels, null),
       for (final g in groups)
         _GroupEntry(
           GroupFilter.named(g.name),
@@ -65,7 +66,8 @@ class GroupList extends StatelessWidget {
         final count = entry.count;
         return Padding(
           key: ValueKey<String>(
-            'group-${entry.filter.name}-${entry.filter.favoritesOnly}',
+            'group-${entry.filter.name}-${entry.filter.favoritesOnly}-'
+            '${entry.filter.recent}',
           ),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
           child: FocusableScale(

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tvapp/core/data/db/daos/history_dao.dart';
 import 'package:tvapp/core/data/db/daos/profile_dao.dart';
 import 'package:tvapp/core/data/profiles/profile_providers.dart';
 import 'package:tvapp/core/data/providers.dart';
@@ -61,9 +62,30 @@ final channelsProvider = StreamProvider<List<Channel>>((ref) {
   final sort = ref.watch(liveSortProvider);
   final policy = ref.watch(parentalPolicyProvider);
   final profileId = ref.watch(activeProfileIdProvider) ?? 0;
-  return ref
-      .watch(databaseProvider)
-      .channelDao
+  final db = ref.watch(databaseProvider);
+  if (filter.recent) {
+    return db.historyDao
+        .watchRecent(
+          profileId: profileId,
+          sourceId: key.$1,
+          kind: HistoryKind.live,
+        )
+        .asyncMap(
+          (rows) => db.channelDao.channelsByKeys(
+            profileId: profileId,
+            sourceId: key.$1,
+            generation: key.$2,
+            keys: <String>[for (final r in rows) r.itemKey],
+          ),
+        )
+        .map(
+          (channels) => <Channel>[
+            for (final c in channels)
+              if (policy.allowsChannel(c)) c,
+          ],
+        );
+  }
+  return db.channelDao
       .watchChannels(
         profileId: profileId,
         sourceId: key.$1,

@@ -156,5 +156,6 @@
   "parentalNoGuardian": "To unlock, a guardian needs to set a PIN on an adult profile.",
   "demoLoading": "Opening the demo",
   "demoOpenFailed": "Could not open the demo",
-  "demoOpenTimeout": "The database did not respond within 10 seconds. Reload the page to try again."
+  "demoOpenTimeout": "The database did not respond within 10 seconds. Reload the page to try again.",
+  "recentChannels": "Recent"
 }

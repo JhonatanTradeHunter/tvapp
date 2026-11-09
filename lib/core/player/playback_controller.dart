@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import 'package:tvapp/core/data/db/daos/history_dao.dart';
+import 'package:tvapp/core/data/profiles/profile_providers.dart';
 import 'package:tvapp/core/data/providers.dart';
 import 'package:tvapp/core/models/channel.dart';
 import 'package:tvapp/core/models/playback_error.dart';
@@ -83,6 +85,21 @@ final playbackControllerProvider =
 /// como falha, falha troca de engine preservando canal e posição, engines
 /// esgotadas geram erro acionável e a segunda falha seguida no mesmo canal
 /// pula para o próximo da lista com um evento para o toast.
+/// O que entra no histórico do perfil ao começar a tocar.
+class HistoryMark {
+  const HistoryMark({
+    required this.kind,
+    required this.itemKey,
+    required this.title,
+    this.image,
+  });
+
+  final HistoryKind kind;
+  final String itemKey;
+  final String title;
+  final String? image;
+}
+
 class PlaybackController extends Notifier<PlayerViewState> {
   static const Duration bufferingLimit = Duration(seconds: 15);
   static const Duration positionInterval = Duration(seconds: 5);
@@ -136,6 +153,15 @@ class PlaybackController extends Notifier<PlayerViewState> {
       return;
     }
     unawaited(ref.read(appPrefsProvider).setLastChannelKey(channel.channelKey));
+    _recordHistory(
+      channel.sourceId,
+      HistoryMark(
+        kind: HistoryKind.live,
+        itemKey: channel.channelKey,
+        title: channel.name,
+        image: channel.logo,
+      ),
+    );
     await _start(seq, channel, uri, isLive: true);
   }
 
@@ -155,14 +181,50 @@ class PlaybackController extends Notifier<PlayerViewState> {
   }
 
   /// Filme ou episódio. A posição vai para o banco a cada
-  /// [positionInterval] e ao sair, sob `item.channelKey`.
-  Future<void> playVod(Channel item, Uri uri, {Duration? resumeAt}) async {
+  /// [positionInterval] e ao sair, sob `item.channelKey`. Filmes entram no
+  /// histórico sozinhos; episódios passam a série em [history].
+  Future<void> playVod(
+    Channel item,
+    Uri uri, {
+    Duration? resumeAt,
+    HistoryMark? history,
+  }) async {
+    final mark =
+        history ??
+        (item.channelKey.startsWith('movie|')
+            ? HistoryMark(
+                kind: HistoryKind.movie,
+                itemKey: item.channelKey,
+                title: item.name,
+                image: item.logo,
+              )
+            : null);
+    if (mark != null) _recordHistory(item.sourceId, mark);
     await _flushPosition();
     _playlist = const <Channel>[];
     _catchupUri = uri;
     _positionKey = item.channelKey;
     final seq = ++_seq;
     await _start(seq, item, uri, isLive: false, startAt: resumeAt);
+  }
+
+  void _recordHistory(int sourceId, HistoryMark mark) {
+    final profileId = ref.read(activeProfileIdProvider);
+    if (profileId == null) return;
+    unawaited(
+      ref
+          .read(databaseProvider)
+          .historyDao
+          .record(
+            profileId: profileId,
+            sourceId: sourceId,
+            kind: mark.kind,
+            itemKey: mark.itemKey,
+            title: mark.title,
+            image: mark.image,
+          )
+          .catchError((Object e) => debugPrint('histórico: $e')),
+    );
   }
 
   Future<void> _flushPosition() async {

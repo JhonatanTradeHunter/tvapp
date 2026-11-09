@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tvapp/core/data/db/app_database.dart';
+import 'package:tvapp/core/data/db/daos/history_dao.dart';
 import 'package:tvapp/core/data/providers.dart';
 import 'package:tvapp/core/data/xtream/xtream_models.dart';
 import 'package:tvapp/core/player/playback_controller.dart';
@@ -23,6 +24,7 @@ void _play(
   required String title,
   String? image,
   Duration? resumeAt,
+  HistoryMark? history,
 }) {
   final item = playableItem(
     kind: kind,
@@ -35,7 +37,7 @@ void _play(
   unawaited(
     ref
         .read(playbackControllerProvider.notifier)
-        .playVod(item, url, resumeAt: resumeAt),
+        .playVod(item, url, resumeAt: resumeAt, history: history),
   );
   Navigator.of(
     context,
@@ -210,6 +212,12 @@ class _SeriesDetailState extends ConsumerState<SeriesDetailScreen> {
                                 '${series.name} · ${l.episodeLabel(e.season, e.episodeNum)}',
                             image: e.image ?? series.cover,
                             resumeAt: at,
+                            history: HistoryMark(
+                              kind: HistoryKind.series,
+                              itemKey: 'series|${series.seriesId}',
+                              title: series.name,
+                              image: series.cover,
+                            ),
                           );
                         },
                 );
