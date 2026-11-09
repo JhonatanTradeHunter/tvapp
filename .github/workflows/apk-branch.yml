@@ -1,0 +1,35 @@
+name: apk-branch
+
+# Copia o APK de debug mais recente do ci para a branch apk-latest, em partes
+# de 45 MB (o GitHub recusa arquivos acima de 100 MB). Serve para baixar o APK
+# por git, sem passar pela página de artifacts.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Baixar APK do último ci verde
+        run: |
+          RUN_ID=$(gh run list -R "$GITHUB_REPOSITORY" -w ci -b main -s success -L 1 --json databaseId --jq '.[0].databaseId')
+          echo "ci $RUN_ID"
+          gh run download "$RUN_ID" -R "$GITHUB_REPOSITORY" -n tvapp-debug-apk -D apk
+          ls -la apk
+      - name: Publicar em partes
+        run: |
+          mkdir pub && cd pub
+          split -b 45M -d ../apk/app-debug.apk app-debug.apk.part
+          sha256sum ../apk/app-debug.apk | sed 's#../apk/##' > app-debug.apk.sha256
+          ls -la
+          git init -q -b apk-latest
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -A && git commit -qm "apk ${GITHUB_SHA::7}"
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/$GITHUB_REPOSITORY" apk-latest
