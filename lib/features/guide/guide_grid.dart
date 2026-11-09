@@ -213,7 +213,12 @@ class _ProgrammeCell extends StatelessWidget {
         if (focused) onFocus();
       },
       borderRadius: const BorderRadius.all(Radius.circular(6)),
-      semanticLabel: title,
+      semanticLabel: l.programmeSemantics(
+        title,
+        format.format(programme.startUtc.toLocal()),
+        format.format(programme.stopUtc.toLocal()),
+        onAir ? l.programmeOnAirShort : '',
+      ),
       child: Opacity(
         opacity: past ? 0.6 : 1,
         child: Container(

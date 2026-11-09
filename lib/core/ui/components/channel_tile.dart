@@ -25,8 +25,12 @@ class ChannelTile extends StatelessWidget {
   final bool autofocus;
   final FocusNode? focusNode;
 
-  static double extentFor(BuildContext context) =>
-      UiVariantScope.isTv(context) ? tvExtent : touchExtent;
+  /// Cresce com a fonte do sistema, para o nome não ser cortado.
+  static double extentFor(BuildContext context) {
+    final base = UiVariantScope.isTv(context) ? tvExtent : touchExtent;
+    final scale = MediaQuery.textScalerOf(context).scale(16) / 16;
+    return base * scale.clamp(1.0, 2.0);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -87,7 +91,16 @@ class ChannelTile extends StatelessWidget {
         focusNode: focusNode,
         onSelect: onSelect,
         onMenu: toggle,
-        semanticLabel: channel.name,
+        menuLabel: channel.isFavorite ? l.removeFavorite : l.addFavorite,
+        // No toque a estrela é um botão próprio; os textos falam por si.
+        semanticLabel: !tv && toggle != null
+            ? null
+            : l.channelSemantics(
+                channel.displayNumber,
+                channel.name,
+                channel.isFavorite ? l.favorite : '',
+              ),
+        excludeChildSemantics: tv || toggle == null,
         onFocusChange: (focused) {
           if (focused) onFocused?.call();
         },

@@ -424,5 +424,48 @@
         "type": "int"
       }
     }
-  }
+  },
+  "channelSemantics": "{number}, {name}. {favorite}",
+  "@channelSemantics": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      },
+      "favorite": {
+        "type": "String"
+      }
+    }
+  },
+  "posterSemantics": "{title}, nota {rating}",
+  "@posterSemantics": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "rating": {
+        "type": "String"
+      }
+    }
+  },
+  "programmeSemantics": "{title}, das {start} às {end}. {onAir}",
+  "@programmeSemantics": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      },
+      "onAir": {
+        "type": "String"
+      }
+    }
+  },
+  "programmeOnAirShort": "No ar"
 }

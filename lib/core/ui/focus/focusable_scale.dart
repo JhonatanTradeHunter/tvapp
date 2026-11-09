@@ -16,6 +16,10 @@ class FocusableScale extends StatefulWidget {
     this.onFocusChange,
     this.borderRadius = const BorderRadius.all(Radius.circular(10)),
     this.semanticLabel,
+    this.menuLabel,
+    this.excludeChildSemantics,
+    this.selected,
+    this.toggled,
   });
 
   static const double focusedScale = 1.05;
@@ -29,7 +33,20 @@ class FocusableScale extends StatefulWidget {
   final FocusNode? focusNode;
   final ValueChanged<bool>? onFocusChange;
   final BorderRadius borderRadius;
+
+  /// Rótulo lido pelo leitor de tela. Com ele, os textos do filho não são
+  /// lidos de novo, salvo [excludeChildSemantics] falso.
   final String? semanticLabel;
+
+  /// Nome da ação de [onMenu] para o leitor de tela (ação personalizada).
+  final String? menuLabel;
+
+  final bool? excludeChildSemantics;
+
+  /// Estado lido pelo leitor de tela: opção escolhida num grupo, ou chave
+  /// ligada/desligada.
+  final bool? selected;
+  final bool? toggled;
 
   @override
   State<FocusableScale> createState() => _FocusableScaleState();
@@ -58,12 +75,31 @@ class _FocusableScaleState extends State<FocusableScale> {
     widget.onFocusChange?.call(focused);
   }
 
+  Map<CustomSemanticsAction, VoidCallback>? get _customActions {
+    final menu = widget.onMenu;
+    final label = widget.menuLabel;
+    if (menu == null || label == null) return null;
+    return <CustomSemanticsAction, VoidCallback>{
+      CustomSemanticsAction(label: label): menu,
+    };
+  }
+
+  Widget _child() {
+    final exclude =
+        widget.excludeChildSemantics ?? widget.semanticLabel != null;
+    return exclude ? ExcludeSemantics(child: widget.child) : widget.child;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!UiVariantScope.isTv(context)) {
       return Semantics(
         button: true,
+        enabled: widget.onSelect != null,
+        selected: widget.selected,
+        toggled: widget.toggled,
         label: widget.semanticLabel,
+        customSemanticsActions: _customActions,
         child: Material(
           type: MaterialType.transparency,
           child: InkWell(
@@ -73,28 +109,38 @@ class _FocusableScaleState extends State<FocusableScale> {
             focusNode: widget.focusNode,
             onFocusChange: widget.onFocusChange,
             borderRadius: widget.borderRadius,
-            child: widget.child,
+            child: _child(),
           ),
         ),
       );
     }
 
     final accent = Theme.of(context).colorScheme.primary;
+    // "Remover animações" do sistema: foco muda na hora, sem escala animada.
+    final duration = MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : FocusableScale.animation;
     return FocusableActionDetector(
       focusNode: widget.focusNode,
       autofocus: widget.autofocus,
+      enabled: widget.onSelect != null || widget.onMenu != null,
       actions: _actions,
       onFocusChange: _handleFocus,
       child: Semantics(
         button: true,
+        enabled: widget.onSelect != null,
+        selected: widget.selected,
+        toggled: widget.toggled,
         focused: _focused,
         label: widget.semanticLabel,
+        onTap: widget.onSelect,
+        customSemanticsActions: _customActions,
         child: AnimatedScale(
           scale: _focused ? FocusableScale.focusedScale : 1,
-          duration: FocusableScale.animation,
+          duration: duration,
           curve: Curves.easeOut,
           child: AnimatedContainer(
-            duration: FocusableScale.animation,
+            duration: duration,
             curve: Curves.easeOut,
             decoration: BoxDecoration(
               borderRadius: widget.borderRadius,
@@ -109,7 +155,7 @@ class _FocusableScaleState extends State<FocusableScale> {
                 width: FocusableScale.borderWidth,
               ),
             ),
-            child: widget.child,
+            child: _child(),
           ),
         ),
       ),

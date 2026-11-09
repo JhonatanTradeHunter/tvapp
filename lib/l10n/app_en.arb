@@ -187,5 +187,9 @@
   "bufferCompact": "Small",
   "bufferNormal": "Default",
   "bufferLarge": "Large",
-  "bufferDetail": "{seconds} s, up to {megabytes} MB"
+  "bufferDetail": "{seconds} s, up to {megabytes} MB",
+  "channelSemantics": "{number}, {name}. {favorite}",
+  "posterSemantics": "{title}, rated {rating}",
+  "programmeSemantics": "{title}, {start} to {end}. {onAir}",
+  "programmeOnAirShort": "On air"
 }

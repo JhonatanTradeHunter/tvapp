@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tvapp/core/ui/focus/focusable_scale.dart';
+import 'package:tvapp/l10n/gen/app_localizations.dart';
 
 /// Pôster 2:3 com título abaixo. Sem imagem, mostra o título no lugar.
 class PosterCard extends StatelessWidget {
@@ -41,7 +42,11 @@ class PosterCard extends StatelessWidget {
       child: FocusableScale(
         autofocus: autofocus,
         onSelect: onSelect,
-        semanticLabel: title,
+        semanticLabel: stars != null && stars > 0
+            ? AppLocalizations.of(
+                context,
+              ).posterSemantics(title, stars.toStringAsFixed(1))
+            : title,
         borderRadius: const BorderRadius.all(Radius.circular(8)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
