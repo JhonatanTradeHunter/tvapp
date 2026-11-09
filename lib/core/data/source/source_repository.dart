@@ -186,15 +186,10 @@ class SourceRepository {
   Future<bool> toggleFavorite(int profileId, Channel channel) => _db.channelDao
       .toggleFavorite(profileId, channel.sourceId, channel.channelKey);
 
-  String? _xtreamEpgUrl(PlaylistSource source) {
-    final creds = source.xtream;
-    if (source.kind != SourceKind.xtream || creds == null) return null;
-    try {
-      return creds.xmltvUri().toString();
-    } on SourceException {
-      return null;
-    }
-  }
+  String? _xtreamEpgUrl(PlaylistSource source) =>
+      source.kind == SourceKind.xtream && source.xtream != null
+      ? xtreamEpgMarker
+      : null;
 
   SourceException _normalize(
     Object error,

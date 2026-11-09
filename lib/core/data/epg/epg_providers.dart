@@ -13,7 +13,10 @@ import 'package:tvapp/core/models/playlist_source.dart';
 import 'package:tvapp/core/player/playback_controller.dart';
 
 final epgRepositoryProvider = Provider<EpgRepository>(
-  (ref) => EpgRepository(db: ref.watch(databaseProvider)),
+  (ref) => EpgRepository(
+    db: ref.watch(databaseProvider),
+    secrets: ref.watch(secretStoreProvider),
+  ),
 );
 
 /// Linha crua da fonte ativa: o modelo não carrega os campos de EPG.

@@ -7,6 +7,7 @@ import 'package:tvapp/core/data/epg/xmltv_importer.dart';
 import 'package:tvapp/core/data/m3u/m3u_parser.dart';
 import 'package:tvapp/core/data/m3u/m3u_importer.dart';
 import 'package:tvapp/core/data/m3u/m3u_stream_reader.dart';
+import 'package:tvapp/core/data/secure/secret_store.dart';
 import 'package:tvapp/core/data/source/playlist_loader.dart';
 import 'package:tvapp/core/data/xtream/xtream_client.dart';
 import 'package:tvapp/core/models/playlist_source.dart';
@@ -19,12 +20,15 @@ class EpgRepository {
     http.Client Function()? clientFactory,
     XmltvImporter? importer,
     PlaylistLoader? loader,
+    SecretStore? secrets,
   }) : _db = db,
+       _secrets = secrets ?? SecureSecretStore(),
        _clientFactory = clientFactory ?? http.Client.new,
        _importer = importer ?? XmltvImporter(),
        _loader = loader ?? PlaylistLoader(clientFactory: clientFactory);
 
   final AppDatabase _db;
+  final SecretStore _secrets;
   final http.Client Function() _clientFactory;
   final XmltvImporter _importer;
   final PlaylistLoader _loader;
@@ -47,21 +51,9 @@ class EpgRepository {
     var timezone = row.serverTimezone;
     final missingUrl = epgUrl == null || epgUrl.isEmpty;
 
-    final host = row.xtreamHost;
-    if (row.kind == SourceKind.xtream && host != null) {
-      final credentials = XtreamCredentials(
-        host: host,
-        port: row.xtreamPort,
-        username: row.xtreamUser ?? '',
-        password: row.xtreamPass ?? '',
-      );
-      if (missingUrl) {
-        try {
-          epgUrl = credentials.xmltvUri().toString();
-        } on SourceException {
-          epgUrl = null;
-        }
-      }
+    final credentials = await xtreamCredentialsFor(row, _secrets);
+    if (credentials != null) {
+      if (missingUrl) epgUrl = xtreamEpgMarker;
       if (timezone == null) {
         try {
           final account = await XtreamClient(
@@ -117,6 +109,20 @@ class EpgRepository {
     return null;
   }
 
+  /// URL gravada, ou o `xmltv.php` montado com a senha do cofre.
+  Future<Uri?> _resolveEpgUri(SourceRow row) async {
+    final url = row.epgUrl;
+    if (url == null) return null;
+    if (url != xtreamEpgMarker) return Uri.tryParse(url);
+    final credentials = await xtreamCredentialsFor(row, _secrets);
+    if (credentials == null) return null;
+    try {
+      return credentials.xmltvUri();
+    } on SourceException {
+      return null;
+    }
+  }
+
   static const Duration staleAfter = Duration(hours: 12);
 
   bool isStale(SourceRow row, DateTime now) {
@@ -132,8 +138,7 @@ class EpgRepository {
     void Function(ImportProgress progress)? onProgress,
   }) async {
     final row = await _db.sourceDao.byId(sourceId);
-    final url = row?.epgUrl;
-    final uri = url == null ? null : Uri.tryParse(url);
+    final uri = row == null ? null : await _resolveEpgUri(row);
     if (row == null || uri == null || uri.host.isEmpty) {
       throw const SourceException(SourceError.notFound, detail: 'epg-url');
     }

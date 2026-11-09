@@ -62,6 +62,10 @@ class MemorySecretStore implements SecretStore {
   Future<void> delete(String key) async => values.remove(key);
 }
 
+/// `epg_url` das fontes Xtream. O endereço real (`xmltv.php` com usuário e
+/// senha na query) é montado na hora, para a senha não ir para o SQLite.
+const String xtreamEpgMarker = 'xtream:xmltv';
+
 /// Credenciais Xtream da linha, com a senha vinda do [SecretStore]. A
 /// coluna antiga só é lida enquanto [moveXtreamPasswords] não rodou.
 Future<XtreamCredentials?> xtreamCredentialsFor(
@@ -105,7 +109,20 @@ Future<int> moveXtreamPasswords(AppDatabase db, SecretStore store) async {
     );
     moved++;
   }
+  // Fontes Xtream antigas guardavam o xmltv.php com a senha na query.
+  final epgRows =
+      await (db.select(db.sources)..where(
+            (t) =>
+                t.kind.equalsValue(SourceKind.xtream) &
+                t.epgUrl.like('%xmltv.php%'),
+          ))
+          .get();
+  for (final row in epgRows) {
+    await (db.update(db.sources)..where((t) => t.id.equals(row.id))).write(
+      const SourcesCompanion(epgUrl: Value(xtreamEpgMarker)),
+    );
+  }
   // Sem VACUUM, o texto antigo pode continuar nas páginas livres do arquivo.
-  if (moved > 0) await db.customStatement('VACUUM');
+  if (moved > 0 || epgRows.isNotEmpty) await db.customStatement('VACUUM');
   return moved;
 }
