@@ -1,10 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tvapp/app.dart';
+import 'package:tvapp/core/background/app_heartbeat.dart';
+import 'package:tvapp/core/background/epg_background.dart';
 import 'package:tvapp/core/data/db/app_database.dart';
+import 'package:tvapp/core/data/prefs/app_prefs.dart';
 import 'package:tvapp/core/data/providers.dart';
 import 'package:tvapp/core/data/secure/secret_store.dart';
 import 'package:tvapp/core/ui/adaptive/device_mode.dart';
@@ -32,5 +37,18 @@ Future<void> main() async {
     child: const TvApp(),
   );
 
-  runApp(kDemo ? DemoBoot(mode: mode, builder: app) : app(null));
+  if (!kDemo) {
+    unawaited(
+      EpgBackground.schedule().catchError(
+        (Object e) => debugPrint('agendar EPG: $e'),
+      ),
+    );
+  }
+
+  runApp(
+    AppHeartbeat(
+      prefs: AppPrefs(prefs),
+      child: kDemo ? DemoBoot(mode: mode, builder: app) : app(null),
+    ),
+  );
 }

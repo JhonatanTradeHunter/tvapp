@@ -12,6 +12,10 @@ class AppPrefs {
   static const String _kPreferredEngine = 'player.preferredEngine';
   static const String _kActiveProfile = 'profiles.active';
   static const String _kBufferProfile = 'player.buffer';
+  static const String _kAppInUse = 'app.inUseAt';
+
+  /// Depois disso sem heartbeat, o app conta como fechado.
+  static const Duration inUseWindow = Duration(minutes: 3);
 
   LiveSort get liveSort {
     final value = _prefs.getString(_kLiveSort);
@@ -57,4 +61,16 @@ class AppPrefs {
 
   Future<void> setBufferProfile(BufferProfile profile) =>
       _prefs.setString(_kBufferProfile, profile.name);
+
+  Future<void> markAppInUse(DateTime now) =>
+      _prefs.setInt(_kAppInUse, now.millisecondsSinceEpoch);
+
+  bool appInUse(DateTime now) {
+    final at = _prefs.getInt(_kAppInUse);
+    if (at == null) return false;
+    final age = now.difference(
+      DateTime.fromMillisecondsSinceEpoch(at, isUtc: true),
+    );
+    return age >= Duration.zero && age < inUseWindow;
+  }
 }
