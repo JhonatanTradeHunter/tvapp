@@ -104,19 +104,133 @@ jobs:
           name: e2e-resultado
           path: tool/e2e/out/
 
-      # Publica relatório e prints na branch e2e-results, para ver pelo app do
-      # GitHub sem baixar zip.
-      - name: Publicar na branch e2e-results
+      - name: Falhar se alguma verificação falhou
+        if: always()
+        run: test ! -f tool/e2e/out/failed
+
+  # Mesmo servidor falso, num emulador Android TV e só com o D-pad.
+  emulator-tv:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v5
+
+      # O APK do ci já é o build de TV (--dart-define=TV=true).
+      - name: Baixar APK novo
+        run: |
+          RUN_ID="${{ github.event.workflow_run.id }}"
+          if [ -z "$RUN_ID" ]; then
+            RUN_ID=$(gh run list -R "$GITHUB_REPOSITORY" -w ci -b main -s success -L 1 --json databaseId --jq '.[0].databaseId')
+          fi
+          echo "APK da execução $RUN_ID"
+          gh run download "$RUN_ID" -R "$GITHUB_REPOSITORY" -n tvapp-debug-apk -D apk/new
+
+      - name: Gerar mídia de teste
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg >/dev/null
+          M=tool/e2e/www/media
+          mkdir -p $M/hls
+          ffmpeg -loglevel error -f lavfi -i testsrc2=size=320x240:rate=25 \
+            -f lavfi -i sine=frequency=440:sample_rate=44100 -t 120 \
+            -c:v libx264 -preset veryfast -pix_fmt yuv420p -g 50 \
+            -c:a aac -b:a 64k -movflags +faststart -shortest $M/test.mp4
+          ffmpeg -loglevel error -i $M/test.mp4 -c copy -bsf:v h264_mp4toannexb -f mpegts $M/test.ts
+          ffmpeg -loglevel error -i $M/test.mp4 -c copy -bsf:v h264_mp4toannexb -f hls \
+            -hls_time 4 -hls_list_size 0 -hls_segment_filename "$M/hls/seg%03d.ts" $M/hls/index.m3u8
+          ls -la $M $M/hls | head
+
+      - name: Subir servidor falso
+        run: |
+          mkdir -p tool/e2e/out
+          nohup python3 tool/e2e/server.py > tool/e2e/out/server.stdout 2>&1 &
+          sleep 2
+          curl -fsS http://127.0.0.1:8080/playlist.m3u | head -3
+
+      - name: Habilitar KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Rodar roteiro no emulador de TV
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: android-tv
+          arch: x86_64
+          profile: tv_1080p
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          script: |
+            mkdir -p tool/e2e/out-tv
+            adb logcat -c || true
+            python3 tool/e2e/tv.py apk/new/app-debug.apk || echo "falhas no roteiro" > tool/e2e/out-tv/failed
+            adb logcat -d > tool/e2e/out-tv/logcat.txt || true
+
+      - name: Resumo
         if: always()
         run: |
-          [ -f tool/e2e/out/report.md ] || exit 0
-          rm -rf /tmp/pub && mkdir -p /tmp/pub/screens
-          cp tool/e2e/out/screens/*.png /tmp/pub/screens/ 2>/dev/null || true
-          cp tool/e2e/out/server.log tool/e2e/out/logcat-errors.txt /tmp/pub/ 2>/dev/null || true
+          [ -f tool/e2e/out-tv/report.md ] && cat tool/e2e/out-tv/report.md >> "$GITHUB_STEP_SUMMARY"
+          grep -E "FATAL EXCEPTION|flutter.*(Error|Exception)" -A5 tool/e2e/out-tv/logcat.txt 2>/dev/null | head -60 > tool/e2e/out-tv/logcat-errors.txt || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-tv-resultado
+          path: tool/e2e/out-tv/
+
+      - name: Falhar se alguma verificação falhou
+        if: always()
+        run: test ! -f tool/e2e/out-tv/failed
+
+  # Junta celular e TV na branch e2e-results, para ver pelo app do GitHub
+  # sem baixar zip.
+  publish:
+    needs: [emulator, emulator-tv]
+    if: always() && (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: e2e-resultado
+          path: phone
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: e2e-tv-resultado
+          path: tv
+
+      - name: Publicar na branch e2e-results
+        run: |
+          rm -rf /tmp/pub && mkdir -p /tmp/pub/screens /tmp/pub/screens-tv
+          cp phone/screens/*.png /tmp/pub/screens/ 2>/dev/null || true
+          cp tv/screens/*.png /tmp/pub/screens-tv/ 2>/dev/null || true
+          cp phone/server.log phone/logcat-errors.txt /tmp/pub/ 2>/dev/null || true
+          cp tv/logcat-errors.txt /tmp/pub/logcat-errors-tv.txt 2>/dev/null || true
           {
             echo "Execução: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
             echo
-            sed -E 's#\| ([0-9]{2}-[^ |]+\.png) \|#| ![](screens/\1) |#' tool/e2e/out/report.md
+            echo "## Celular"
+            echo
+            if [ -f phone/report.md ]; then
+              sed -E -e '/^# /d' -e 's#\| ([0-9]{2}-[^ |]+\.png) \|#| ![](screens/\1) |#' phone/report.md
+            else
+              echo "Sem relatório."
+            fi
+            echo
+            echo "## TV (D-pad)"
+            echo
+            if [ -f tv/report.md ]; then
+              sed -E -e '/^# /d' -e 's#\| ([0-9]{2}-[^ |]+\.png) \|#| ![](screens-tv/\1) |#' tv/report.md
+            else
+              echo "Sem relatório."
+            fi
           } > /tmp/pub/README.md
           cd /tmp/pub
           git init -q -b e2e-results
@@ -124,7 +238,3 @@ jobs:
           git config user.email "github-actions@users.noreply.github.com"
           git add -A && git commit -qm "e2e $GITHUB_RUN_ID"
           git push -qf "https://x-access-token:${GH_TOKEN}@github.com/$GITHUB_REPOSITORY" e2e-results
-
-      - name: Falhar se alguma verificação falhou
-        if: always()
-        run: test ! -f tool/e2e/out/failed
