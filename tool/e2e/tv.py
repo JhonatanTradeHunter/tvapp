@@ -98,6 +98,7 @@ def focus_to(pattern, max_steps=30, scroll="down"):
             key(scroll)
             continue
         if cur is None:
+            print("    foco: nenhum item focado no uiautomator → down", flush=True)
             key("down")
             continue
         tx, ty = center(focusable[0])
@@ -107,6 +108,7 @@ def focus_to(pattern, max_steps=30, scroll="down"):
             direction = "down" if dy > 0 else "up"
         else:
             direction = "right" if dx > 0 else "left"
+        print(f"    foco: {cur['label'][:40]!r} → {direction}", flush=True)
         state = (cur["label"], direction)
         tried[state] = tried.get(state, 0) + 1
         if tried[state] > 2:
