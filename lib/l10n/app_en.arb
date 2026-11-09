@@ -191,5 +191,9 @@
   "channelSemantics": "{number}, {name}. {favorite}",
   "posterSemantics": "{title}, rated {rating}",
   "programmeSemantics": "{title}, {start} to {end}. {onAir}",
-  "programmeOnAirShort": "On air"
+  "programmeOnAirShort": "On air",
+  "profileKidsShort": "kids",
+  "profileLockedShort": "PIN protected",
+  "profileColorN": "Color {n}",
+  "groupSemantics": "{name}, {count} channels"
 }

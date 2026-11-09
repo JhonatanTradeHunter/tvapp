@@ -160,7 +160,12 @@ class ProfileAvatar extends StatelessWidget {
       child: FocusableScale(
         autofocus: autofocus,
         onSelect: onSelect,
-        semanticLabel: profile.name,
+        semanticLabel: <String>[
+          profile.name,
+          if (profile.isKids) AppLocalizations.of(context).profileKidsShort,
+          if (profileHasPin(profile))
+            AppLocalizations.of(context).profileLockedShort,
+        ].join(', '),
         borderRadius: const BorderRadius.all(Radius.circular(16)),
         child: Padding(
           padding: const EdgeInsets.all(10),

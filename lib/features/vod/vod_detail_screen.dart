@@ -270,7 +270,11 @@ class _EpisodeTile extends StatelessWidget {
       child: FocusableScale(
         autofocus: autofocus,
         onSelect: onSelect,
-        semanticLabel: episode.title,
+        semanticLabel: <String>[
+          l.episodeLabel(episode.season, episode.episodeNum),
+          episode.title,
+          ?duration,
+        ].join(', '),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(

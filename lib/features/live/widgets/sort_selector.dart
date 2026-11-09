@@ -53,6 +53,7 @@ class SortSelector extends StatelessWidget {
               onSelect: () => onChanged(option),
               borderRadius: const BorderRadius.all(Radius.circular(18)),
               semanticLabel: labelFor(option, l),
+              selected: option == sort,
               child: Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 14,

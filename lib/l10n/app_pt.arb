@@ -467,5 +467,26 @@
       }
     }
   },
-  "programmeOnAirShort": "No ar"
+  "programmeOnAirShort": "No ar",
+  "profileKidsShort": "infantil",
+  "profileLockedShort": "com PIN",
+  "profileColorN": "Cor {n}",
+  "@profileColorN": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "groupSemantics": "{name}, {count} canais",
+  "@groupSemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

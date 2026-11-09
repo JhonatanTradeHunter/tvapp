@@ -56,6 +56,7 @@ class GroupList extends StatelessWidget {
   }
 
   Widget _buildVertical(BuildContext context, List<_GroupEntry> entries) {
+    final l = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return ListView.builder(
       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -75,7 +76,10 @@ class GroupList extends StatelessWidget {
             onFocusChange: (focused) {
               if (focused) onFocusGroup(entry.filter);
             },
-            semanticLabel: entry.label,
+            semanticLabel: count == null
+                ? entry.label
+                : l.groupSemantics(entry.label, count),
+            selected: isSelected,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(

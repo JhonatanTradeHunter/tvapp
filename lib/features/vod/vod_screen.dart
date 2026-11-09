@@ -218,6 +218,7 @@ class _Chip extends StatelessWidget {
         onSelect: onSelect,
         borderRadius: radius,
         semanticLabel: label,
+        selected: selected,
         child: Container(
           padding: EdgeInsets.symmetric(
             horizontal: dense ? 12 : 16,

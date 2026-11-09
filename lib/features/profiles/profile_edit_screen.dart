@@ -216,6 +216,8 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                       for (var i = 0; i < profileColors.length; i++)
                         FocusableScale(
                           onSelect: () => setState(() => _color = i),
+                          semanticLabel: l.profileColorN(i + 1),
+                          selected: i == _color,
                           borderRadius: const BorderRadius.all(
                             Radius.circular(24),
                           ),
@@ -395,7 +397,8 @@ class _Toggle extends StatelessWidget {
     final theme = Theme.of(context);
     return FocusableScale(
       onSelect: () => onChanged(!value),
-      semanticLabel: label,
+      semanticLabel: '$label. $hint',
+      toggled: value,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Row(
@@ -441,6 +444,7 @@ class _Choice extends StatelessWidget {
       onSelect: onSelect,
       borderRadius: radius,
       semanticLabel: label,
+      selected: selected,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
