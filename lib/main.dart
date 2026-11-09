@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tvapp/app.dart';
 import 'package:tvapp/core/data/db/app_database.dart';
 import 'package:tvapp/core/data/providers.dart';
+import 'package:tvapp/core/data/secure/secret_store.dart';
 import 'package:tvapp/core/ui/adaptive/device_mode.dart';
 import 'package:tvapp/features/demo/demo_boot.dart';
 import 'package:tvapp/features/demo/demo_bootstrap.dart';
@@ -24,6 +25,7 @@ Future<void> main() async {
       deviceModeProvider.overrideWithValue(mode),
       if (demoDb != null) ...[
         databaseProvider.overrideWithValue(demoDb),
+        secretStoreProvider.overrideWithValue(MemorySecretStore()),
         xtreamClientProvider.overrideWithValue(DemoXtreamClient()),
       ],
     ],

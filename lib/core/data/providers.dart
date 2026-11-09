@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tvapp/core/data/db/app_database.dart';
 import 'package:tvapp/core/data/prefs/app_prefs.dart';
+import 'package:tvapp/core/data/secure/secret_store.dart';
 import 'package:tvapp/core/data/source/connection_tester.dart';
 import 'package:tvapp/core/data/source/playlist_loader.dart';
 import 'package:tvapp/core/data/source/source_repository.dart';
@@ -29,10 +30,14 @@ final connectionTesterProvider = Provider<ConnectionTester>(
   (ref) => ConnectionTester(),
 );
 
+/// Keystore/Keychain. A demo web troca por memória.
+final secretStoreProvider = Provider<SecretStore>((ref) => SecureSecretStore());
+
 final sourceRepositoryProvider = Provider<SourceRepository>(
   (ref) => SourceRepository(
     db: ref.watch(databaseProvider),
     loader: ref.watch(playlistLoaderProvider),
+    secrets: ref.watch(secretStoreProvider),
   ),
 );
 

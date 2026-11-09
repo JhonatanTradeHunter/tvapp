@@ -1,7 +1,9 @@
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart';
 import 'package:tvapp/core/data/db/app_database.dart';
 import 'package:tvapp/core/data/m3u/m3u_importer.dart';
 import 'package:tvapp/core/data/m3u/m3u_stream_reader.dart';
+import 'package:tvapp/core/data/secure/secret_store.dart';
 import 'package:tvapp/core/data/source/playlist_loader.dart';
 import 'package:tvapp/core/data/xtream/xtream_client.dart';
 import 'package:tvapp/core/data/xtream/xtream_importer.dart';
@@ -16,31 +18,55 @@ class SourceRepository {
     M3uImporter? importer,
     XtreamImporter? xtreamImporter,
     XtreamClient Function(XtreamCredentials credentials)? xtreamClientFactory,
+    SecretStore? secrets,
   }) : _db = db,
+       _secrets = secrets ?? SecureSecretStore(),
        _loader = loader,
        _importer = importer ?? M3uImporter(),
        _xtreamImporter = xtreamImporter ?? XtreamImporter(),
        _xtreamClientFactory = xtreamClientFactory ?? XtreamClient.new;
 
   final AppDatabase _db;
+  final SecretStore _secrets;
   final PlaylistLoader _loader;
   final M3uImporter _importer;
   final XtreamImporter _xtreamImporter;
   final XtreamClient Function(XtreamCredentials credentials)
   _xtreamClientFactory;
 
-  Stream<PlaylistSource?> watchActive() => _db.sourceDao.watchActive().map(
-    (row) => row == null ? null : _toModel(row),
-  );
+  Future<void>? _passwordsMoved;
 
+  /// Na primeira assinatura, tira do SQLite as senhas gravadas por versões
+  /// antigas antes de emitir qualquer fonte.
+  Stream<PlaylistSource?> watchActive() async* {
+    await (_passwordsMoved ??= moveXtreamPasswords(
+      _db,
+      _secrets,
+    ).then((_) {}, onError: (Object e) => debugPrint('mover senhas: $e')));
+    yield* _db.sourceDao.watchActive().asyncMap(
+      (row) async => row == null ? null : _toModel(row),
+    );
+  }
+
+  /// A senha Xtream vai para o [SecretStore]; a coluna fica nula.
   Future<PlaylistSource> save(PlaylistSource source) async {
     final id = source.id;
+    final password = source.xtream?.password;
     if (id == null) {
       final newId = await _db.sourceDao.insertSource(_insertCompanion(source));
+      await _storePassword(newId, password);
       return source.copyWith(id: newId);
     }
+    await _storePassword(id, password);
     await _db.sourceDao.updateSource(id, _updateCompanion(source));
     return source;
+  }
+
+  Future<void> _storePassword(int sourceId, String? password) {
+    final key = SecretStore.xtreamPasswordKey(sourceId);
+    return password == null
+        ? _secrets.delete(key)
+        : _secrets.write(key, password);
   }
 
   /// Grava o arquivo escolhido na pasta do app, por stream. No Android o
@@ -114,7 +140,10 @@ class SourceRepository {
     } catch (error) {
       await _db.channelDao.deleteGeneration(sourceId, generation);
       await _db.vodDao.deleteGeneration(sourceId, generation);
-      if (isNew) await _db.sourceDao.deleteSource(sourceId);
+      if (isNew) {
+        await _db.sourceDao.deleteSource(sourceId);
+        await _secrets.delete(SecretStore.xtreamPasswordKey(sourceId));
+      }
       throw _normalize(error, saved.kind, cancel);
     } finally {
       await stream?.close();
@@ -193,21 +222,13 @@ class SourceRepository {
     return SourceException(SourceError.network, detail: '$error');
   }
 
-  PlaylistSource _toModel(SourceRow row) {
-    final host = row.xtreamHost;
+  Future<PlaylistSource> _toModel(SourceRow row) async {
     return PlaylistSource(
       id: row.id,
       name: row.name,
       kind: row.kind,
       location: row.location,
-      xtream: row.kind == SourceKind.xtream && host != null
-          ? XtreamCredentials(
-              host: host,
-              port: row.xtreamPort,
-              username: row.xtreamUser ?? '',
-              password: row.xtreamPass ?? '',
-            )
-          : null,
+      xtream: await xtreamCredentialsFor(row, _secrets),
       activeGeneration: row.activeGeneration,
       lastRefresh: row.lastRefresh,
     );
@@ -221,7 +242,6 @@ class SourceRepository {
       xtreamHost: Value(s.xtream?.host),
       xtreamPort: Value(s.xtream?.port),
       xtreamUser: Value(s.xtream?.username),
-      xtreamPass: Value(s.xtream?.password),
     );
   }
 
@@ -233,7 +253,7 @@ class SourceRepository {
       xtreamHost: Value(s.xtream?.host),
       xtreamPort: Value(s.xtream?.port),
       xtreamUser: Value(s.xtream?.username),
-      xtreamPass: Value(s.xtream?.password),
+      xtreamPass: const Value(null),
     );
   }
 }
