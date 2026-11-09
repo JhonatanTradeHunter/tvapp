@@ -52,15 +52,18 @@ class Channels extends Table {
   IntColumn get catchupDays => integer().nullable()();
 }
 
+/// Canais favoritos de cada perfil. `profileId` 0 marca favoritos vindos de
+/// antes dos perfis, adotados pelo primeiro perfil criado.
 @DataClassName('FavoriteRow')
 class Favorites extends Table {
+  IntColumn get profileId => integer().withDefault(const Constant(0))();
   IntColumn get sourceId =>
       integer().references(Sources, #id, onDelete: KeyAction.cascade)();
   TextColumn get channelKey => text()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 
   @override
-  Set<Column> get primaryKey => {sourceId, channelKey};
+  Set<Column> get primaryKey => {profileId, sourceId, channelKey};
 }
 
 /// Canais declarados no XMLTV. `xmltvId` em minúsculas, para casar com
@@ -186,4 +189,22 @@ class ProfileBlockedGroups extends Table {
 
   @override
   Set<Column> get primaryKey => {profileId, kind, groupName};
+}
+
+/// O que cada perfil abriu por último. `kind`: live, movie ou series;
+/// `itemKey` é a chave do canal, `movie|id` ou `series|id`.
+@DataClassName('WatchHistoryRow')
+@TableIndex(name: 'idx_history_recent', columns: {#profileId, #watchedAt})
+class WatchHistory extends Table {
+  IntColumn get profileId => integer()();
+  IntColumn get sourceId =>
+      integer().references(Sources, #id, onDelete: KeyAction.cascade)();
+  TextColumn get kind => text()();
+  TextColumn get itemKey => text()();
+  TextColumn get title => text()();
+  TextColumn get image => text().nullable()();
+  DateTimeColumn get watchedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {profileId, sourceId, kind, itemKey};
 }

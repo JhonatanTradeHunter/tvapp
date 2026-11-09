@@ -104,6 +104,7 @@ class ChannelDao extends DatabaseAccessor<AppDatabase> with _$ChannelDaoMixin {
   }
 
   Stream<List<Channel>> watchChannels({
+    required int profileId,
     required int sourceId,
     required int generation,
     required GroupFilter filter,
@@ -112,7 +113,8 @@ class ChannelDao extends DatabaseAccessor<AppDatabase> with _$ChannelDaoMixin {
     final query = select(channels).join([
       leftOuterJoin(
         favorites,
-        favorites.sourceId.equalsExp(channels.sourceId) &
+        favorites.profileId.equals(profileId) &
+            favorites.sourceId.equalsExp(channels.sourceId) &
             favorites.channelKey.equalsExp(channels.channelKey),
       ),
     ]);
@@ -158,23 +160,98 @@ class ChannelDao extends DatabaseAccessor<AppDatabase> with _$ChannelDaoMixin {
     }
   }
 
-  Future<bool> toggleFavorite(int sourceId, String key) async {
-    final existing =
-        await (select(favorites)..where(
-              (f) => f.sourceId.equals(sourceId) & f.channelKey.equals(key),
-            ))
-            .getSingleOrNull();
+  Future<bool> toggleFavorite(int profileId, int sourceId, String key) async {
+    Expression<bool> match($FavoritesTable f) =>
+        f.profileId.equals(profileId) &
+        f.sourceId.equals(sourceId) &
+        f.channelKey.equals(key);
+    final existing = await (select(favorites)..where(match)).getSingleOrNull();
     if (existing != null) {
-      await (delete(favorites)..where(
-            (f) => f.sourceId.equals(sourceId) & f.channelKey.equals(key),
-          ))
-          .go();
+      await (delete(favorites)..where(match)).go();
       return false;
     }
-    await into(
-      favorites,
-    ).insert(FavoritesCompanion.insert(sourceId: sourceId, channelKey: key));
+    await into(favorites).insert(
+      FavoritesCompanion.insert(
+        profileId: Value(profileId),
+        sourceId: sourceId,
+        channelKey: key,
+      ),
+    );
     return true;
+  }
+
+  /// Canais da geração atual com estas chaves, na ordem pedida.
+  Future<List<Channel>> channelsByKeys({
+    required int profileId,
+    required int sourceId,
+    required int generation,
+    required List<String> keys,
+  }) async {
+    if (keys.isEmpty) return const <Channel>[];
+    final rows =
+        await (select(channels).join([
+              leftOuterJoin(
+                favorites,
+                favorites.profileId.equals(profileId) &
+                    favorites.sourceId.equalsExp(channels.sourceId) &
+                    favorites.channelKey.equalsExp(channels.channelKey),
+              ),
+            ])..where(
+              channels.sourceId.equals(sourceId) &
+                  channels.generation.equals(generation) &
+                  channels.channelKey.isIn(keys),
+            ))
+            .get();
+    final byKey = <String, Channel>{
+      for (final row in rows)
+        row.readTable(channels).channelKey: _toChannel(
+          row.readTable(channels),
+          row.readTableOrNull(favorites) != null,
+        ),
+    };
+    return <Channel>[
+      for (final k in keys)
+        if (byKey[k] case final c?) c,
+    ];
+  }
+
+  /// Busca por nome sem acento e sem caixa; [folded] já vem normalizado.
+  Future<List<Channel>> search({
+    required int profileId,
+    required int sourceId,
+    required int generation,
+    required String folded,
+    int limit = 60,
+  }) async {
+    final rows =
+        await (select(channels).join([
+                leftOuterJoin(
+                  favorites,
+                  favorites.profileId.equals(profileId) &
+                      favorites.sourceId.equalsExp(channels.sourceId) &
+                      favorites.channelKey.equalsExp(channels.channelKey),
+                ),
+              ])
+              ..where(
+                channels.sourceId.equals(sourceId) &
+                    channels.generation.equals(generation) &
+                    channels.nameFolded.like('%${_escapeLike(folded)}%'),
+              )
+              ..orderBy([
+                OrderingTerm.asc(
+                  channels.nameFolded.like('${_escapeLike(folded)}%').not(),
+                ),
+                OrderingTerm.asc(channels.position),
+              ])
+              ..limit(limit))
+            .get();
+    return <Channel>[
+      for (final row in rows)
+        _toChannel(
+          row.readTable(channels),
+          row.readTableOrNull(favorites) != null,
+        ),
+    ];
   }
 
   Channel _toChannel(ChannelRow r, bool favorite) {
@@ -199,3 +276,6 @@ class ChannelDao extends DatabaseAccessor<AppDatabase> with _$ChannelDaoMixin {
     );
   }
 }
+
+String _escapeLike(String value) =>
+    value.replaceAll('%', '').replaceAll('_', ' ');

@@ -22,7 +22,33 @@ const List<String> _v1 = <String>[
       'created_at INTEGER NOT NULL, PRIMARY KEY (source_id, channel_key))',
   "INSERT INTO sources (name, kind, location, active_generation, is_active) "
       "VALUES ('lista', 'url', 'http://x/a.m3u', 1, 1)",
+  'INSERT INTO favorites (source_id, channel_key, created_at) '
+      "VALUES (1, 'globo|globo', 0)",
 ];
+
+const List<String> _v6Extra = <String>[
+  'CREATE TABLE programmes (id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, '
+      'source_id INTEGER NOT NULL, generation INTEGER NOT NULL, '
+      'channel_id TEXT NOT NULL, start_utc INTEGER NOT NULL, '
+      'stop_utc INTEGER NOT NULL, title TEXT NOT NULL, subtitle TEXT NULL, '
+      'description TEXT NULL, category TEXT NULL, age_rating INTEGER NULL)',
+  'CREATE TABLE profiles (id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, '
+      'name TEXT NOT NULL, color_index INTEGER NOT NULL DEFAULT 0, '
+      'is_kids INTEGER NOT NULL DEFAULT 0, max_age INTEGER NULL, '
+      'pin_hash TEXT NULL, pin_salt TEXT NULL, '
+      'position INTEGER NOT NULL DEFAULT 0)',
+  'CREATE TABLE profile_blocked_groups (profile_id INTEGER NOT NULL, '
+      'kind TEXT NOT NULL, group_name TEXT NOT NULL, '
+      'PRIMARY KEY (profile_id, kind, group_name))',
+  "INSERT INTO profiles (id, name) VALUES (3, 'Ana'), (5, 'Beto')",
+];
+
+Future<List<int>> _favoriteProfiles(AppDatabase db) async {
+  final rows = await db
+      .customSelect('SELECT profile_id FROM favorites', variables: <Variable>[])
+      .get();
+  return <int>[for (final r in rows) r.read<int>('profile_id')];
+}
 
 Future<List<String>> _columns(AppDatabase db, String table) async {
   final rows = await db
@@ -50,6 +76,30 @@ void main() {
     expect(await _columns(db, 'programmes'), contains('age_rating'));
     expect(await _columns(db, 'sources'), contains('server_timezone'));
     expect(await db.profileDao.all(), isEmpty);
+    expect(await _favoriteProfiles(db), <int>[0]);
+
+    final profile = await db.profileDao.ensureDefault('Principal');
+    expect(await _favoriteProfiles(db), <int>[profile.id]);
+  });
+
+  test('migra de v6 dando os favoritos ao primeiro perfil', () async {
+    final db = AppDatabase.forTesting(
+      NativeDatabase.memory(
+        setup: (raw) {
+          for (final sql in _v1) {
+            raw.execute(sql);
+          }
+          for (final sql in _v6Extra) {
+            raw.execute(sql);
+          }
+          raw.userVersion = 6;
+        },
+      ),
+    );
+    addTearDown(db.close);
+
+    expect(await _favoriteProfiles(db), <int>[3]);
+    expect(await _columns(db, 'watch_history'), contains('item_key'));
   });
 
   test('migra de v5 adicionando age_rating à tabela que já existia', () async {

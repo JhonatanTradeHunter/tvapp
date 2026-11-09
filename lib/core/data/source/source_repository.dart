@@ -154,8 +154,8 @@ class SourceRepository {
     void Function(ImportProgress progress)? onProgress,
   }) => importSource(source, cancel: cancel, onProgress: onProgress);
 
-  Future<bool> toggleFavorite(Channel channel) =>
-      _db.channelDao.toggleFavorite(channel.sourceId, channel.channelKey);
+  Future<bool> toggleFavorite(int profileId, Channel channel) => _db.channelDao
+      .toggleFavorite(profileId, channel.sourceId, channel.channelKey);
 
   String? _xtreamEpgUrl(PlaylistSource source) {
     final creds = source.xtream;

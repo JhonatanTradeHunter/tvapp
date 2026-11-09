@@ -60,10 +60,12 @@ final channelsProvider = StreamProvider<List<Channel>>((ref) {
   final filter = ref.watch(groupFilterProvider);
   final sort = ref.watch(liveSortProvider);
   final policy = ref.watch(parentalPolicyProvider);
+  final profileId = ref.watch(activeProfileIdProvider) ?? 0;
   return ref
       .watch(databaseProvider)
       .channelDao
       .watchChannels(
+        profileId: profileId,
         sourceId: key.$1,
         generation: key.$2,
         filter: filter,
@@ -84,6 +86,7 @@ class LiveActions {
 
   final Ref _ref;
 
-  Future<bool> toggleFavorite(Channel channel) =>
-      _ref.read(sourceRepositoryProvider).toggleFavorite(channel);
+  Future<bool> toggleFavorite(Channel channel) => _ref
+      .read(sourceRepositoryProvider)
+      .toggleFavorite(_ref.read(activeProfileIdProvider) ?? 0, channel);
 }

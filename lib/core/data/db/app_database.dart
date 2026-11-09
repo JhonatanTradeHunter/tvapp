@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:tvapp/core/data/db/connection/connection.dart';
 import 'package:tvapp/core/data/db/daos/channel_dao.dart';
 import 'package:tvapp/core/data/db/daos/epg_dao.dart';
+import 'package:tvapp/core/data/db/daos/history_dao.dart';
 import 'package:tvapp/core/data/db/daos/position_dao.dart';
 import 'package:tvapp/core/data/db/daos/profile_dao.dart';
 import 'package:tvapp/core/data/db/daos/source_dao.dart';
@@ -23,8 +24,17 @@ part 'app_database.g.dart';
     PlaybackPositions,
     Profiles,
     ProfileBlockedGroups,
+    WatchHistory,
   ],
-  daos: [ChannelDao, SourceDao, EpgDao, VodDao, PositionDao, ProfileDao],
+  daos: [
+    ChannelDao,
+    SourceDao,
+    EpgDao,
+    VodDao,
+    PositionDao,
+    ProfileDao,
+    HistoryDao,
+  ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(openConnection());
@@ -32,7 +42,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -64,6 +74,23 @@ class AppDatabase extends _$AppDatabase {
         if (from >= 2) await m.addColumn(programmes, programmes.ageRating);
         await m.createTable(profiles);
         await m.createTable(profileBlockedGroups);
+      }
+      if (from < 7) {
+        // Favoritos passam a ser por perfil: ficam com o primeiro perfil, ou
+        // com 0 até o perfil padrão ser criado.
+        await m.alterTable(
+          TableMigration(
+            favorites,
+            newColumns: [favorites.profileId],
+            columnTransformer: {
+              favorites.profileId: const CustomExpression<int>(
+                'COALESCE((SELECT MIN(id) FROM profiles), 0)',
+              ),
+            },
+          ),
+        );
+        await m.createTable(watchHistory);
+        await m.createIndex(idxHistoryRecent);
       }
     },
     beforeOpen: (details) async {

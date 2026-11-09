@@ -42,6 +42,7 @@ void main() {
     expect(source, isNotNull);
     final channels = await db.channelDao
         .watchChannels(
+          profileId: 0,
           sourceId: source!.id,
           generation: 1,
           filter: const GroupFilter.all(),
