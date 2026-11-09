@@ -209,10 +209,7 @@ class ChannelDao extends DatabaseAccessor<AppDatabase> with _$ChannelDaoMixin {
           row.readTableOrNull(favorites) != null,
         ),
     };
-    return <Channel>[
-      for (final k in keys)
-        if (byKey[k] case final c?) c,
-    ];
+    return <Channel>[for (final k in keys) ?byKey[k]];
   }
 
   /// Busca por nome sem acento e sem caixa; [folded] já vem normalizado.
