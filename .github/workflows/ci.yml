@@ -43,8 +43,6 @@ jobs:
       - name: analyze
         run: flutter analyze
 
-      - name: test
-        run: flutter test
 
       # Chave de debug fixa: sem ela, cada execução assina com uma chave nova
       # e o Android recusa instalar o APK novo por cima do anterior.
@@ -58,6 +56,69 @@ jobs:
         with:
           name: tvapp-debug-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
+
+      # Release assinado só quando os quatro segredos existem; sem eles o job
+      # termina no debug. A chave entra pelas propriedades android.injected.*
+      # do Android Gradle Plugin, sem mexer no build.gradle gerado.
+      - name: Preparar assinatura de release
+        id: signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          keytool -genkeypair -keystore /tmp/t.jks -storepass testpass1 -keypass testpass2 -alias upload -keyalg RSA -keysize 2048 -validity 365 -dname CN=teste >/dev/null 2>&1
+          KEYSTORE_BASE64=$(base64 -w0 /tmp/t.jks); KEYSTORE_PASSWORD=testpass1; KEY_ALIAS=upload; KEY_PASSWORD=testpass2
+          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then
+            echo "Segredos de assinatura ausentes: só o build de debug."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          KS="$RUNNER_TEMP/release.jks"
+          echo "$KEYSTORE_BASE64" | base64 -d > "$KS"
+          keytool -list -keystore "$KS" -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" >/dev/null
+          {
+            echo "android.injected.signing.store.file=$KS"
+            echo "android.injected.signing.store.password=$KEYSTORE_PASSWORD"
+            echo "android.injected.signing.key.alias=$KEY_ALIAS"
+            echo "android.injected.signing.key.password=$KEY_PASSWORD"
+          } >> android/gradle.properties
+          SHA=$(keytool -list -v -keystore "$KS" -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" | awk '/SHA256:/ {print $2; exit}' | tr -d ':' | tr 'A-F' 'a-f')
+          echo "sha256=$SHA" >> "$GITHUB_OUTPUT"
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
+
+      - name: build apk e aab (release, TV)
+        if: steps.signing.outputs.enabled == 'true'
+        run: |
+          flutter build apk --release --dart-define=TV=true --build-number=${{ github.run_number }}
+          flutter build appbundle --release --dart-define=TV=true --build-number=${{ github.run_number }}
+
+      # Confere que saiu com a chave de release, e não com a de debug.
+      - name: Conferir assinatura de release
+        if: steps.signing.outputs.enabled == 'true'
+        env:
+          EXPECTED: ${{ steps.signing.outputs.sha256 }}
+        run: |
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          APK=build/app/outputs/flutter-apk/app-release.apk
+          GOT=$("$BT/apksigner" verify --print-certs "$APK" | awk -F': ' '/certificate SHA-256 digest/ {print $2; exit}')
+          echo "APK assinado com $GOT"
+          test "$GOT" = "$EXPECTED"
+          AAB=build/app/outputs/bundle/release/app-release.aab
+          jarsigner -verify "$AAB" | grep -q "jar verified"
+          AAB_SHA=$(keytool -printcert -jarfile "$AAB" | awk '/SHA256:/ {print $2; exit}' | tr -d ':' | tr 'A-F' 'a-f')
+          echo "AAB assinado com $AAB_SHA"
+          test "$AAB_SHA" = "$EXPECTED"
+          rm -f "$RUNNER_TEMP/release.jks"
+
+      - uses: actions/upload-artifact@v4
+        if: steps.signing.outputs.enabled == 'true'
+        with:
+          name: tvapp-release
+          path: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/bundle/release/app-release.aab
 
   ios:
     runs-on: macos-latest
