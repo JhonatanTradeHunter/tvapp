@@ -182,11 +182,18 @@ def scenario_list():
     if not focus_to(r"Canal Um HLS"):
         d.check("TV: navegar na lista pelo D-pad", False, "o foco não chegou ao primeiro canal")
         return
+    # A lista do servidor falso tem dois canais: desce até o fim e sobe.
     seen = [focused_label()]
-    for _ in range(3):
-        key("down")
+    for direction in ("down", "down", "up"):
+        key(direction)
         seen.append(focused_label())
-    moved = len({s for s in seen if s}) >= 3
+    first, second, end, back_up = seen
+    moved = (
+        bool(first)
+        and second != first
+        and end == second
+        and back_up == first
+    )
     d.check(
         "TV: navegar na lista pelo D-pad",
         moved,
