@@ -8,6 +8,7 @@ import 'package:tvapp/core/player/playback_controller.dart';
 import 'package:tvapp/core/ui/adaptive/device_mode.dart';
 import 'package:tvapp/core/ui/components/channel_tile.dart';
 import 'package:tvapp/core/ui/components/empty_state.dart';
+import 'package:tvapp/core/ui/focus/tv_shortcuts.dart';
 import 'package:tvapp/features/live/player/player_screen.dart';
 import 'package:tvapp/features/search/search_controller.dart';
 import 'package:tvapp/features/vod/poster_card.dart';
@@ -109,22 +110,24 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          TextField(
-            controller: _text,
-            onChanged: _onChanged,
-            onSubmitted: _submit,
-            textInputAction: TextInputAction.search,
-            decoration: InputDecoration(
-              hintText: l.searchField,
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: _text.text.isEmpty
-                  ? null
-                  : IconButton(
-                      tooltip: l.searchClear,
-                      icon: const Icon(Icons.close),
-                      onPressed: _clear,
-                    ),
-              border: const OutlineInputBorder(),
+          DpadFieldGuard(
+            child: TextField(
+              controller: _text,
+              onChanged: _onChanged,
+              onSubmitted: _submit,
+              textInputAction: TextInputAction.search,
+              decoration: InputDecoration(
+                hintText: l.searchField,
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _text.text.isEmpty
+                    ? null
+                    : IconButton(
+                        tooltip: l.searchClear,
+                        icon: const Icon(Icons.close),
+                        onPressed: _clear,
+                      ),
+                border: const OutlineInputBorder(),
+              ),
             ),
           ),
           const SizedBox(height: 8),

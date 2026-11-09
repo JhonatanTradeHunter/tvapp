@@ -101,6 +101,10 @@ def focus_to(pattern, max_steps=30, scroll="down"):
             print("    foco: nenhum item focado no uiautomator → down", flush=True)
             key("down")
             continue
+        if cur["cls"].endswith("EditText"):
+            # Na TV o teclado na tela abre ao focar o campo e passa a receber
+            # o D-pad; ESC fecha o teclado antes de seguir.
+            d.hide_keyboard()
         tx, ty = center(focusable[0])
         cx, cy = center(cur)
         dx, dy = tx - cx, ty - cy
