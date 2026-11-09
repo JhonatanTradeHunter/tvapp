@@ -80,7 +80,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      tester.getSemantics(find.byType(ChannelTile).first),
+      tester.getSemantics(find.bySemanticsLabel('10, Canal 0. Favorito')),
       isSemantics(
         label: '10, Canal 0. Favorito',
         isButton: true,
@@ -88,7 +88,7 @@ void main() {
       ),
     );
     expect(
-      tester.getSemantics(find.byType(PosterCard)),
+      tester.getSemantics(find.bySemanticsLabel('Filme, nota 7.5')),
       isSemantics(label: 'Filme, nota 7.5', hasTapAction: true),
     );
     await expectLater(tester, meetsGuideline(textContrastGuideline));

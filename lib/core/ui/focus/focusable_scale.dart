@@ -121,21 +121,23 @@ class _FocusableScaleState extends State<FocusableScale> {
     final duration = MediaQuery.disableAnimationsOf(context)
         ? Duration.zero
         : FocusableScale.animation;
-    return FocusableActionDetector(
-      focusNode: widget.focusNode,
-      autofocus: widget.autofocus,
-      enabled: widget.onSelect != null || widget.onMenu != null,
-      actions: _actions,
-      onFocusChange: _handleFocus,
-      child: Semantics(
-        button: true,
-        enabled: widget.onSelect != null,
-        selected: widget.selected,
-        toggled: widget.toggled,
-        focused: _focused,
-        label: widget.semanticLabel,
-        onTap: widget.onSelect,
-        customSemanticsActions: _customActions,
+    // Um nó só para o leitor de tela: o foco do FocusableActionDetector se
+    // junta ao rótulo e às ações deste container.
+    return Semantics(
+      container: true,
+      button: true,
+      enabled: widget.onSelect != null,
+      selected: widget.selected,
+      toggled: widget.toggled,
+      label: widget.semanticLabel,
+      onTap: widget.onSelect,
+      customSemanticsActions: _customActions,
+      child: FocusableActionDetector(
+        focusNode: widget.focusNode,
+        autofocus: widget.autofocus,
+        enabled: widget.onSelect != null || widget.onMenu != null,
+        actions: _actions,
+        onFocusChange: _handleFocus,
         child: AnimatedScale(
           scale: _focused ? FocusableScale.focusedScale : 1,
           duration: duration,
