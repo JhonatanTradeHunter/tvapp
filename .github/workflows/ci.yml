@@ -68,8 +68,8 @@ jobs:
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          keytool -genkeypair -keystore /tmp/t.jks -storepass testpass1 -keypass testpass2 -alias upload -keyalg RSA -keysize 2048 -validity 365 -dname CN=teste >/dev/null 2>&1
-          KEYSTORE_BASE64=$(base64 -w0 /tmp/t.jks); KEYSTORE_PASSWORD=testpass1; KEY_ALIAS=upload; KEY_PASSWORD=testpass2
+          keytool -genkeypair -keystore /tmp/t.jks -storepass testpass1 -keypass testpass1 -alias upload -keyalg RSA -keysize 2048 -validity 365 -dname CN=teste >/dev/null 2>&1
+          KEYSTORE_BASE64=$(base64 -w0 /tmp/t.jks); KEYSTORE_PASSWORD=testpass1; KEY_ALIAS=upload; KEY_PASSWORD=testpass1
           if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then
             echo "Segredos de assinatura ausentes: só o build de debug."
             echo "enabled=false" >> "$GITHUB_OUTPUT"
@@ -120,22 +120,3 @@ jobs:
             build/app/outputs/flutter-apk/app-release.apk
             build/app/outputs/bundle/release/app-release.aab
 
-  ios:
-    runs-on: macos-latest
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v5
-
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          cache: true
-
-      - run: flutter create --org com.jhonatanbaseggio123 --project-name tvapp --platforms android,ios .
-      - run: flutter pub get
-      - run: dart run build_runner build --delete-conflicting-outputs
-      - run: flutter gen-l10n
-
-      # Sem assinatura: só confirma que compila. Instalar no iPhone exige conta Apple.
-      - name: build ios (sem assinatura)
-        run: flutter build ios --debug --no-codesign
