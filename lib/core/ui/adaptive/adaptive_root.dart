@@ -12,6 +12,7 @@ import 'package:tvapp/features/live/live_screen.dart';
 import 'package:tvapp/features/profiles/profile_picker_screen.dart';
 import 'package:tvapp/features/profiles/profiles_screen.dart';
 import 'package:tvapp/features/search/search_screen.dart';
+import 'package:tvapp/features/settings/player_settings_screen.dart';
 import 'package:tvapp/features/setup/setup_screen.dart';
 import 'package:tvapp/features/vod/vod_screen.dart';
 import 'package:tvapp/l10n/gen/app_localizations.dart';
@@ -196,6 +197,16 @@ class _SettingsHome extends ConsumerWidget {
                       icon: Icons.manage_accounts,
                       primary: false,
                       onPressed: () => openProfilesWithGuard(context, ref),
+                    ),
+                    AppButton(
+                      label: l.playerSettings,
+                      icon: Icons.tune,
+                      primary: false,
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const PlayerSettingsScreen(),
+                        ),
+                      ),
                     ),
                   ],
                   AppButton(

@@ -265,6 +265,7 @@ class PlaybackController extends Notifier<PlayerViewState> {
       uri: uri,
       headers: channel.httpHeaders,
       isLive: isLive,
+      buffer: ref.read(appPrefsProvider).bufferProfile,
     );
     _candidates = ref
         .read(engineSelectorProvider)

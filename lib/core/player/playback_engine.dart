@@ -25,21 +25,41 @@ class PlaybackState {
   final String? errorDetail;
 }
 
+/// Quanto a engine guarda à frente. Só vale para engines com
+/// `supportsBufferTuning`; as outras usam o padrão da plataforma.
+enum BufferProfile {
+  compact(seconds: 5, megabytes: 8),
+  normal(seconds: 15, megabytes: 32),
+  large(seconds: 45, megabytes: 96);
+
+  const BufferProfile({required this.seconds, required this.megabytes});
+
+  final int seconds;
+  final int megabytes;
+}
+
 class MediaRequest {
   const MediaRequest({
     required this.uri,
     this.headers = const <String, String>{},
     this.isLive = true,
     this.startAt,
+    this.buffer = BufferProfile.normal,
   });
 
   final Uri uri;
   final Map<String, String> headers;
   final bool isLive;
   final Duration? startAt;
+  final BufferProfile buffer;
 
-  MediaRequest withStart(Duration? start) =>
-      MediaRequest(uri: uri, headers: headers, isLive: isLive, startAt: start);
+  MediaRequest withStart(Duration? start) => MediaRequest(
+    uri: uri,
+    headers: headers,
+    isLive: isLive,
+    startAt: start,
+    buffer: buffer,
+  );
 }
 
 class AudioTrack {

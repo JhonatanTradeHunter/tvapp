@@ -388,5 +388,41 @@
         "type": "int"
       }
     }
+  },
+  "playerSettings": "Reprodução",
+  "engineTitle": "Motor de vídeo",
+  "engineHint": "Se o motor escolhido não abrir um canal, o app tenta o próximo sozinho.",
+  "engineAuto": "Automático ({engine})",
+  "@engineAuto": {
+    "placeholders": {
+      "engine": {
+        "type": "String"
+      }
+    }
+  },
+  "engineExoPlayer": "ExoPlayer",
+  "engineAvPlayer": "AVPlayer",
+  "engineMpv": "mpv",
+  "engineWeb": "Navegador",
+  "capRawTs": "abre MPEG-TS",
+  "capTracks": "troca de áudio",
+  "capAudioDelay": "atraso de áudio",
+  "capBuffer": "buffer ajustável",
+  "capBasic": "recursos básicos",
+  "bufferTitle": "Buffer",
+  "bufferHint": "Vale para motores com buffer ajustável. Maior aguenta melhor internet instável, mas demora mais para começar e usa mais memória.",
+  "bufferCompact": "Pequeno",
+  "bufferNormal": "Padrão",
+  "bufferLarge": "Grande",
+  "bufferDetail": "{seconds} s, até {megabytes} MB",
+  "@bufferDetail": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      },
+      "megabytes": {
+        "type": "int"
+      }
+    }
   }
 }

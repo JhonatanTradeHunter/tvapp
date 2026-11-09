@@ -11,6 +11,7 @@ class AppPrefs {
   static const String _kLastChannelKey = 'live.lastChannelKey';
   static const String _kPreferredEngine = 'player.preferredEngine';
   static const String _kActiveProfile = 'profiles.active';
+  static const String _kBufferProfile = 'player.buffer';
 
   LiveSort get liveSort {
     final value = _prefs.getString(_kLiveSort);
@@ -45,4 +46,15 @@ class AppPrefs {
   Future<void> setPreferredEngine(EngineKind? kind) => kind == null
       ? _prefs.remove(_kPreferredEngine)
       : _prefs.setString(_kPreferredEngine, kind.name);
+
+  BufferProfile get bufferProfile {
+    final value = _prefs.getString(_kBufferProfile);
+    for (final p in BufferProfile.values) {
+      if (p.name == value) return p;
+    }
+    return BufferProfile.normal;
+  }
+
+  Future<void> setBufferProfile(BufferProfile profile) =>
+      _prefs.setString(_kBufferProfile, profile.name);
 }

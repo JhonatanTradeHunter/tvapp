@@ -59,6 +59,7 @@ class MpvEngine implements PlaybackEngine {
   Future<void> open(MediaRequest request) async {
     final seq = ++_openSeq;
     final player = await _ensurePlayer();
+    await _applyBuffer(player, request.buffer);
     _opened = false;
     _playing = false;
     _buffering = false;
@@ -218,8 +219,6 @@ class MpvEngine implements PlaybackEngine {
     _player = player;
     await _setProperty(player, 'network-timeout', '${connectTimeout.inSeconds}');
     await _setProperty(player, 'cache', 'yes');
-    await _setProperty(player, 'cache-secs', '15');
-    await _setProperty(player, 'demuxer-readahead-secs', '15');
     _video.value = mkv.VideoController(player);
 
     _subscriptions.addAll(<StreamSubscription<Object?>>[
@@ -261,6 +260,15 @@ class MpvEngine implements PlaybackEngine {
   Future<void> _applyAudioDelay(mk.Player player) {
     final seconds = (_audioDelay.inMilliseconds / 1000).toStringAsFixed(3);
     return _setProperty(player, 'audio-delay', seconds);
+  }
+
+  static Future<void> _applyBuffer(
+    mk.Player player,
+    BufferProfile buffer,
+  ) async {
+    await _setProperty(player, 'cache-secs', '${buffer.seconds}');
+    await _setProperty(player, 'demuxer-readahead-secs', '${buffer.seconds}');
+    await _setProperty(player, 'demuxer-max-bytes', '${buffer.megabytes}MiB');
   }
 
   static Future<void> _setProperty(
