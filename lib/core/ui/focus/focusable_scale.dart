@@ -158,9 +158,28 @@ class _FocusableScaleState extends State<FocusableScale> {
                 width: FocusableScale.borderWidth,
               ),
             ),
-            child: _child(),
+            child: _touchable(),
           ),
         ),
+      ),
+    );
+  }
+
+  /// TVs com tela de toque, emuladores como o BlueStacks e mouse: o toque
+  /// também aciona. O InkWell não pega foco nem gera semântica própria; o
+  /// foco continua no FocusableActionDetector acima.
+  Widget _touchable() {
+    return Material(
+      type: MaterialType.transparency,
+      child: InkWell(
+        onTap: widget.onSelect,
+        onLongPress: widget.onMenu,
+        canRequestFocus: false,
+        excludeFromSemantics: true,
+        borderRadius: widget.borderRadius,
+        focusColor: Colors.transparent,
+        hoverColor: Colors.transparent,
+        child: _child(),
       ),
     );
   }

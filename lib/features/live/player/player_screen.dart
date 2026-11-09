@@ -367,6 +367,17 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
         onTap: _toggleOverlay,
         child: body,
       );
+    } else {
+      // TV com toque ou mouse: tocar no vídeo também mostra os controles.
+      body = InkWell(
+        onTap: _toggleOverlay,
+        canRequestFocus: false,
+        excludeFromSemantics: true,
+        splashFactory: NoSplash.splashFactory,
+        highlightColor: Colors.transparent,
+        hoverColor: Colors.transparent,
+        child: body,
+      );
     }
 
     return PopScope(
