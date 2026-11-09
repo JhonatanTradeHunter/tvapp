@@ -13,6 +13,11 @@ permissions:
   contents: write
   actions: read
 
+# Um e2e por commit: um disparo novo para o mesmo commit cancela o anterior.
+concurrency:
+  group: e2e-${{ github.event.workflow_run.head_sha || github.sha }}
+  cancel-in-progress: true
+
 jobs:
   emulator:
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
