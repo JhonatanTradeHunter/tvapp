@@ -102,7 +102,7 @@ jobs:
         run: |
           BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
           APK=build/app/outputs/flutter-apk/app-release.apk
-          GOT=$("$BT/apksigner" verify --print-certs "$APK" | awk -F': ' '/certificate SHA-256 digest/ {print $2; exit}')
+          GOT=$("$BT/apksigner" verify --print-certs "$APK" | grep -m1 'certificate SHA-256 digest' | sed -E 's/.*digest: *//')
           echo "APK assinado com $GOT"
           test "$GOT" = "$EXPECTED"
           AAB=build/app/outputs/bundle/release/app-release.aab
