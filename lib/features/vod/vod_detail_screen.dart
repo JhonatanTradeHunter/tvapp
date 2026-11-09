@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tvapp/core/data/db/app_database.dart';
 import 'package:tvapp/core/data/db/daos/history_dao.dart';
+import 'package:tvapp/core/data/profiles/profile_providers.dart';
 import 'package:tvapp/core/data/providers.dart';
 import 'package:tvapp/core/data/xtream/xtream_models.dart';
 import 'package:tvapp/core/player/playback_controller.dart';
@@ -193,10 +194,17 @@ class _SeriesDetailState extends ConsumerState<SeriesDetailScreen> {
                       ? null
                       : () async {
                           final key = vodItemKey(VodTab.series, e.id);
-                          final at = await ref
-                              .read(databaseProvider)
-                              .positionDao
-                              .resumePoint(series.sourceId, key);
+                          final profileId = ref.read(activeProfileIdProvider);
+                          final at = profileId == null
+                              ? null
+                              : await ref
+                                    .read(databaseProvider)
+                                    .positionDao
+                                    .resumePoint(
+                                      profileId,
+                                      series.sourceId,
+                                      key,
+                                    );
                           if (!context.mounted) return;
                           _play(
                             context,

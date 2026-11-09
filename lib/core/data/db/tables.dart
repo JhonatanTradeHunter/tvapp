@@ -150,10 +150,12 @@ class SeriesItems extends Table {
   DateTimeColumn get lastModified => dateTime().nullable()();
 }
 
-/// Onde o usuário parou em filmes e episódios. `itemKey` é `movie|id` ou
-/// `episode|id`, por fonte.
+/// Onde cada perfil parou em filmes e episódios. `itemKey` é `movie|id` ou
+/// `episode|id`. `profileId` 0 marca posições de antes da separação por
+/// perfil, adotadas pelo primeiro perfil criado.
 @DataClassName('PlaybackPositionRow')
 class PlaybackPositions extends Table {
+  IntColumn get profileId => integer().withDefault(const Constant(0))();
   IntColumn get sourceId =>
       integer().references(Sources, #id, onDelete: KeyAction.cascade)();
   TextColumn get itemKey => text()();
@@ -162,7 +164,7 @@ class PlaybackPositions extends Table {
   DateTimeColumn get updatedAt => dateTime()();
 
   @override
-  Set<Column> get primaryKey => {sourceId, itemKey};
+  Set<Column> get primaryKey => {profileId, sourceId, itemKey};
 }
 
 /// Perfis de quem usa o app. PIN de 4 dígitos guardado como hash com sal.

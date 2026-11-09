@@ -42,7 +42,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -91,6 +91,24 @@ class AppDatabase extends _$AppDatabase {
         );
         await m.createTable(watchHistory);
         await m.createIndex(idxHistoryRecent);
+      }
+      if (from < 8) {
+        // Posições passam a ser por perfil, com a mesma regra dos favoritos.
+        // Se playback_positions nasceu no passo de v4 desta migração, já veio
+        // com profile_id e não há o que copiar.
+        if (from >= 4) {
+          await m.alterTable(
+            TableMigration(
+              playbackPositions,
+              newColumns: [playbackPositions.profileId],
+              columnTransformer: {
+                playbackPositions.profileId: const CustomExpression<int>(
+                  'COALESCE((SELECT MIN(id) FROM profiles), 0)',
+                ),
+              },
+            ),
+          );
+        }
       }
     },
     beforeOpen: (details) async {

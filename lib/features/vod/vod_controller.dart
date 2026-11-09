@@ -181,10 +181,12 @@ String vodItemKey(VodTab kind, int id) =>
 /// Onde o usuário parou; nulo quando não há o que retomar.
 final resumePointProvider = StreamProvider.autoDispose
     .family<Duration?, (int, String)>((ref, key) {
+      final profileId = ref.watch(activeProfileIdProvider);
+      if (profileId == null) return Stream<Duration?>.value(null);
       return ref
           .watch(databaseProvider)
           .positionDao
-          .watchResumePoint(key.$1, key.$2);
+          .watchResumePoint(profileId, key.$1, key.$2);
     });
 
 /// O player trabalha com [Channel]; filmes e episódios entram como um

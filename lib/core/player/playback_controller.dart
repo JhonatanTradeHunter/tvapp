@@ -115,6 +115,7 @@ class PlaybackController extends Notifier<PlayerViewState> {
   MediaRequest? _request;
   Uri? _catchupUri;
   String? _positionKey;
+  int? _positionProfile;
   Timer? _positionTimer;
   PlaybackError? _lastError;
   Timer? _watchdog;
@@ -204,6 +205,7 @@ class PlaybackController extends Notifier<PlayerViewState> {
     _playlist = const <Channel>[];
     _catchupUri = uri;
     _positionKey = item.channelKey;
+    _positionProfile = ref.read(activeProfileIdProvider);
     final seq = ++_seq;
     await _start(seq, item, uri, isLive: false, startAt: resumeAt);
   }
@@ -229,13 +231,14 @@ class PlaybackController extends Notifier<PlayerViewState> {
 
   Future<void> _flushPosition() async {
     final key = _positionKey;
+    final profileId = _positionProfile;
     final channel = state.channel;
-    if (key == null || channel == null) return;
+    if (key == null || profileId == null || channel == null) return;
     if (state.duration <= Duration.zero) return;
     await ref
         .read(databaseProvider)
         .positionDao
-        .save(channel.sourceId, key, state.position, state.duration);
+        .save(profileId, channel.sourceId, key, state.position, state.duration);
   }
 
   void _startPositionTimer(int seq) {

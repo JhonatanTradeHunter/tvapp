@@ -8,7 +8,13 @@ part 'profile_dao.g.dart';
 enum BlockedKind { live, vod, series }
 
 @DriftAccessor(
-  tables: [Profiles, ProfileBlockedGroups, Favorites, WatchHistory],
+  tables: [
+    Profiles,
+    ProfileBlockedGroups,
+    Favorites,
+    WatchHistory,
+    PlaybackPositions,
+  ],
 )
 class ProfileDao extends DatabaseAccessor<AppDatabase> with _$ProfileDaoMixin {
   ProfileDao(super.attachedDatabase);
@@ -31,7 +37,7 @@ class ProfileDao extends DatabaseAccessor<AppDatabase> with _$ProfileDaoMixin {
       (select(profiles)..where((t) => t.id.equals(id))).getSingleOrNull();
 
   /// Cria o perfil padrão quando não existe nenhum e devolve o primeiro.
-  /// Favoritos de antes dos perfis (perfil 0) passam para ele.
+  /// Favoritos e posições de antes dos perfis (perfil 0) passam para ele.
   Future<ProfileRow> ensureDefault(String name) async {
     final existing = await all();
     if (existing.isNotEmpty) return existing.first;
@@ -42,6 +48,8 @@ class ProfileDao extends DatabaseAccessor<AppDatabase> with _$ProfileDaoMixin {
       await (update(favorites)..where((t) => t.profileId.equals(0))).write(
         FavoritesCompanion(profileId: Value(id)),
       );
+      await (update(playbackPositions)..where((t) => t.profileId.equals(0)))
+          .write(PlaybackPositionsCompanion(profileId: Value(id)));
       return (await byId(id))!;
     });
   }
@@ -93,6 +101,9 @@ class ProfileDao extends DatabaseAccessor<AppDatabase> with _$ProfileDaoMixin {
   Future<void> deleteProfile(int id) => transaction(() async {
     await (delete(favorites)..where((t) => t.profileId.equals(id))).go();
     await (delete(watchHistory)..where((t) => t.profileId.equals(id))).go();
+    await (delete(
+      playbackPositions,
+    )..where((t) => t.profileId.equals(id))).go();
     await (delete(profiles)..where((t) => t.id.equals(id))).go();
   });
 

@@ -21,17 +21,19 @@ class PositionDao extends DatabaseAccessor<AppDatabase>
       position >= minResume && !isFinished(position, duration);
 
   Future<void> save(
+    int profileId,
     int sourceId,
     String key,
     Duration position,
     Duration duration,
   ) async {
     if (!worthKeeping(position, duration)) {
-      await clear(sourceId, key);
+      await clear(profileId, sourceId, key);
       return;
     }
     await into(playbackPositions).insertOnConflictUpdate(
       PlaybackPositionsCompanion.insert(
+        profileId: Value(profileId),
         sourceId: sourceId,
         itemKey: key,
         positionMs: position.inMilliseconds,
@@ -41,24 +43,34 @@ class PositionDao extends DatabaseAccessor<AppDatabase>
     );
   }
 
-  Future<Duration?> resumePoint(int sourceId, String key) async {
-    final row = await _query(sourceId, key).getSingleOrNull();
+  Future<Duration?> resumePoint(int profileId, int sourceId, String key) async {
+    final row = await _query(profileId, sourceId, key).getSingleOrNull();
     return row == null ? null : Duration(milliseconds: row.positionMs);
   }
 
-  Stream<Duration?> watchResumePoint(int sourceId, String key) =>
-      _query(sourceId, key).watchSingleOrNull().map(
+  Stream<Duration?> watchResumePoint(int profileId, int sourceId, String key) =>
+      _query(profileId, sourceId, key).watchSingleOrNull().map(
         (row) => row == null ? null : Duration(milliseconds: row.positionMs),
       );
 
-  Future<void> clear(int sourceId, String key) => (delete(
-    playbackPositions,
-  )..where((t) => t.sourceId.equals(sourceId) & t.itemKey.equals(key))).go();
+  Future<void> clear(int profileId, int sourceId, String key) =>
+      (delete(playbackPositions)..where(
+            (t) =>
+                t.profileId.equals(profileId) &
+                t.sourceId.equals(sourceId) &
+                t.itemKey.equals(key),
+          ))
+          .go();
 
   SimpleSelectStatement<$PlaybackPositionsTable, PlaybackPositionRow> _query(
+    int profileId,
     int sourceId,
     String key,
-  ) =>
-      select(playbackPositions)
-        ..where((t) => t.sourceId.equals(sourceId) & t.itemKey.equals(key));
+  ) => select(playbackPositions)
+    ..where(
+      (t) =>
+          t.profileId.equals(profileId) &
+          t.sourceId.equals(sourceId) &
+          t.itemKey.equals(key),
+    );
 }
