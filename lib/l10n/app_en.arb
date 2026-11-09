@@ -195,5 +195,6 @@
   "profileKidsShort": "kids",
   "profileLockedShort": "PIN protected",
   "profileColorN": "Color {n}",
-  "groupSemantics": "{name}, {count} channels"
+  "groupSemantics": "{name}, {count} channels",
+  "playerLoading": "Loading"
 }

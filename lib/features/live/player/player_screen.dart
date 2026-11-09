@@ -317,7 +317,13 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
         const ColoredBox(color: Colors.black),
         if (engine != null && !blocked) engine.buildView(context),
         if (st.isBusy && !blocked)
-          const Center(child: CircularProgressIndicator()),
+          Center(
+            child: Semantics(
+              liveRegion: true,
+              label: AppLocalizations.of(context).playerLoading,
+              child: const CircularProgressIndicator(),
+            ),
+          ),
         if (blocked)
           ParentalBlockPanel(
             programme: restricted,
@@ -422,14 +428,27 @@ class _ErrorPanel extends StatelessWidget {
           children: [
             Icon(Icons.error_outline, size: 48, color: theme.colorScheme.error),
             const SizedBox(height: 12),
-            Text(l.playbackFailedTitle, style: theme.textTheme.titleLarge),
-            const SizedBox(height: 4),
-            Text(channelName, style: theme.textTheme.titleSmall),
-            const SizedBox(height: 12),
-            Text(
-              describePlaybackError(error, l),
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyLarge,
+            // Anunciado assim que aparece; o foco vai para "Tentar de novo".
+            Semantics(
+              liveRegion: true,
+              container: true,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    l.playbackFailedTitle,
+                    style: theme.textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(channelName, style: theme.textTheme.titleSmall),
+                  const SizedBox(height: 12),
+                  Text(
+                    describePlaybackError(error, l),
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyLarge,
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 24),
             Wrap(

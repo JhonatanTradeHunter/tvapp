@@ -168,11 +168,11 @@ class _OptionRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Semantics(
-        selected: selected,
         inMutuallyExclusiveGroup: true,
         child: FocusableScale(
           onSelect: onSelect,
           autofocus: autofocus,
+          selected: selected,
           semanticLabel: text == null ? label : '$label. $text',
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

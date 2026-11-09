@@ -115,6 +115,7 @@ class _Sidebar extends StatelessWidget {
               child: FocusableScale(
                 onSelect: () => onSelect(destination),
                 semanticLabel: destination.label(l),
+                selected: destination == current,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,

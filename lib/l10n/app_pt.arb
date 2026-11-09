@@ -488,5 +488,6 @@
         "type": "int"
       }
     }
-  }
+  },
+  "playerLoading": "Carregando"
 }
