@@ -106,6 +106,38 @@ class DestinationBody extends StatelessWidget {
 class _SettingsHome extends ConsumerWidget {
   const _SettingsHome();
 
+  Future<void> _clearHistory(
+    BuildContext context,
+    WidgetRef ref,
+    int profileId,
+  ) async {
+    final l = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l.clearHistory),
+        content: Text(l.clearHistoryConfirm),
+        actions: [
+          TextButton(
+            autofocus: true,
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l.clearHistory),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await ref.read(databaseProvider).historyDao.clear(profileId);
+    if (!context.mounted) return;
+    ScaffoldMessenger.maybeOf(
+      context,
+    )?.showSnackBar(SnackBar(content: Text(l.historyCleared)));
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
@@ -167,6 +199,13 @@ class _SettingsHome extends ConsumerWidget {
                     onPressed: () =>
                         ref.read(activeProfileIdProvider.notifier).signOut(),
                   ),
+                  if (profile != null)
+                    AppButton(
+                      label: l.clearHistory,
+                      icon: Icons.history_toggle_off,
+                      primary: false,
+                      onPressed: () => _clearHistory(context, ref, profile.id),
+                    ),
                 ],
               ),
             ],

@@ -157,5 +157,8 @@
   "demoLoading": "Opening the demo",
   "demoOpenFailed": "Could not open the demo",
   "demoOpenTimeout": "The database did not respond within 10 seconds. Reload the page to try again.",
-  "recentChannels": "Recent"
+  "recentChannels": "Recent",
+  "clearHistory": "Clear history",
+  "clearHistoryConfirm": "Recent channels, movies and series for this profile will be removed.",
+  "historyCleared": "History cleared."
 }

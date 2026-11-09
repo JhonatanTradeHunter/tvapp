@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tvapp/core/data/db/app_database.dart';
 import 'package:tvapp/core/models/channel_group.dart';
 import 'package:tvapp/core/ui/adaptive/device_mode.dart';
 import 'package:tvapp/core/ui/components/empty_state.dart';
@@ -23,12 +24,21 @@ class VodScreen extends ConsumerStatefulWidget {
 class _VodScreenState extends ConsumerState<VodScreen> {
   VodTab _tab = VodTab.movies;
   String? _category;
+  bool _recent = false;
 
   void _setTab(VodTab tab) {
     if (tab == _tab) return;
     setState(() {
       _tab = tab;
       _category = null;
+      _recent = false;
+    });
+  }
+
+  void _setCategory(String? category, {bool recent = false}) {
+    setState(() {
+      _category = category;
+      _recent = recent;
     });
   }
 
@@ -58,15 +68,41 @@ class _VodScreenState extends ConsumerState<VodScreen> {
     }
 
     final categories = _tab == VodTab.movies ? movieCats : seriesCats;
-    final chips = <(String, String?)>[
-      (l.allChannels, null),
+    final recentMovies =
+        ref.watch(recentVodProvider).valueOrNull ?? const <VodItemRow>[];
+    final recentSeries =
+        ref.watch(recentSeriesProvider).valueOrNull ?? const <SeriesItemRow>[];
+    final hasRecent = _tab == VodTab.movies
+        ? recentMovies.isNotEmpty
+        : recentSeries.isNotEmpty;
+    final chips = <_Chip>[
+      _Chip(
+        label: l.allChannels,
+        selected: !_recent && _category == null,
+        dense: true,
+        onSelect: () => _setCategory(null),
+      ),
+      if (hasRecent || _recent)
+        _Chip(
+          label: l.recentChannels,
+          selected: _recent,
+          dense: true,
+          onSelect: () => _setCategory(null, recent: true),
+        ),
       for (final c in categories)
-        (c.name.isEmpty ? l.ungrouped : c.name, c.name),
+        _Chip(
+          label: c.name.isEmpty ? l.ungrouped : c.name,
+          selected: !_recent && _category == c.name,
+          dense: true,
+          onSelect: () => _setCategory(c.name),
+        ),
     ];
 
     Widget grid;
     if (_tab == VodTab.movies) {
-      final items = ref.watch(vodItemsProvider(_category)).valueOrNull;
+      final items = _recent
+          ? recentMovies
+          : ref.watch(vodItemsProvider(_category)).valueOrNull;
       grid = _Grid(
         count: items?.length,
         builder: (context, i) {
@@ -81,7 +117,9 @@ class _VodScreenState extends ConsumerState<VodScreen> {
         },
       );
     } else {
-      final items = ref.watch(seriesItemsProvider(_category)).valueOrNull;
+      final items = _recent
+          ? recentSeries
+          : ref.watch(seriesItemsProvider(_category)).valueOrNull;
       grid = _Grid(
         count: items?.length,
         builder: (context, i) {
@@ -121,18 +159,7 @@ class _VodScreenState extends ConsumerState<VodScreen> {
           const SizedBox(height: 8),
           SizedBox(
             height: tv ? 52 : 44,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: [
-                for (final chip in chips)
-                  _Chip(
-                    label: chip.$1,
-                    selected: _category == chip.$2,
-                    dense: true,
-                    onSelect: () => setState(() => _category = chip.$2),
-                  ),
-              ],
-            ),
+            child: ListView(scrollDirection: Axis.horizontal, children: chips),
           ),
           const SizedBox(height: 8),
           Expanded(child: grid),

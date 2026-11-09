@@ -349,5 +349,8 @@
   "demoLoading": "Abrindo a demonstração",
   "demoOpenFailed": "Não foi possível abrir a demonstração",
   "demoOpenTimeout": "O banco de dados não respondeu em 10 segundos. Recarregue a página para tentar de novo.",
-  "recentChannels": "Recentes"
+  "recentChannels": "Recentes",
+  "clearHistory": "Limpar histórico",
+  "clearHistoryConfirm": "Os canais, filmes e séries recentes deste perfil serão apagados.",
+  "historyCleared": "Histórico apagado."
 }

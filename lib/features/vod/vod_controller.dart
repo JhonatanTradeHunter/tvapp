@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tvapp/core/data/db/app_database.dart';
+import 'package:tvapp/core/data/db/daos/history_dao.dart';
 import 'package:tvapp/core/data/db/daos/profile_dao.dart';
 import 'package:tvapp/core/data/profiles/profile_providers.dart';
 import 'package:tvapp/core/data/providers.dart';
@@ -90,6 +91,72 @@ final seriesItemsProvider = StreamProvider.autoDispose
             ],
           );
     });
+
+List<int> _historyIds(List<WatchHistoryRow> rows, String prefix) => <int>[
+  for (final r in rows)
+    if (r.itemKey.startsWith(prefix))
+      ?int.tryParse(r.itemKey.substring(prefix.length)),
+];
+
+/// Filmes abertos por último no perfil ativo, do mais recente ao mais antigo.
+final recentVodProvider = StreamProvider.autoDispose<List<VodItemRow>>((ref) {
+  final key = ref.watch(activeListingKeyProvider);
+  final profileId = ref.watch(activeProfileIdProvider);
+  if (key == null || profileId == null) {
+    return Stream.value(const <VodItemRow>[]);
+  }
+  final policy = ref.watch(parentalPolicyProvider);
+  final db = ref.watch(databaseProvider);
+  return db.historyDao
+      .watchRecent(
+        profileId: profileId,
+        sourceId: key.$1,
+        kind: HistoryKind.movie,
+      )
+      .asyncMap(
+        (rows) => db.vodDao.vodByStreamIds(
+          key.$1,
+          key.$2,
+          _historyIds(rows, 'movie|'),
+        ),
+      )
+      .map(
+        (items) => <VodItemRow>[
+          for (final i in items)
+            if (policy.allowsItem(BlockedKind.vod, i.categoryName, i.name)) i,
+        ],
+      );
+});
+
+/// Séries abertas por último no perfil ativo.
+final recentSeriesProvider = StreamProvider.autoDispose<List<SeriesItemRow>>((
+  ref,
+) {
+  final key = ref.watch(activeListingKeyProvider);
+  final profileId = ref.watch(activeProfileIdProvider);
+  if (key == null || profileId == null) {
+    return Stream.value(const <SeriesItemRow>[]);
+  }
+  final policy = ref.watch(parentalPolicyProvider);
+  final db = ref.watch(databaseProvider);
+  return db.historyDao
+      .watchRecent(
+        profileId: profileId,
+        sourceId: key.$1,
+        kind: HistoryKind.series,
+      )
+      .asyncMap(
+        (rows) =>
+            db.vodDao.seriesByIds(key.$1, key.$2, _historyIds(rows, 'series|')),
+      )
+      .map(
+        (items) => <SeriesItemRow>[
+          for (final i in items)
+            if (policy.allowsItem(BlockedKind.series, i.categoryName, i.name))
+              i,
+        ],
+      );
+});
 
 final vodInfoProvider = FutureProvider.autoDispose.family<XtreamVodInfo?, int>((
   ref,

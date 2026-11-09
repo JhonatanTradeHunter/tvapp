@@ -181,6 +181,44 @@ class VodDao extends DatabaseAccessor<AppDatabase> with _$VodDaoMixin {
     return query.watch();
   }
 
+  /// Filmes da geração atual com estes ids, na ordem pedida.
+  Future<List<VodItemRow>> vodByStreamIds(
+    int sourceId,
+    int generation,
+    List<int> ids,
+  ) async {
+    if (ids.isEmpty) return const <VodItemRow>[];
+    final rows =
+        await (select(vodItems)..where(
+              (t) =>
+                  t.sourceId.equals(sourceId) &
+                  t.generation.equals(generation) &
+                  t.streamId.isIn(ids),
+            ))
+            .get();
+    final byId = <int, VodItemRow>{for (final r in rows) r.streamId: r};
+    return <VodItemRow>[for (final id in ids) ?byId[id]];
+  }
+
+  /// Séries da geração atual com estes ids, na ordem pedida.
+  Future<List<SeriesItemRow>> seriesByIds(
+    int sourceId,
+    int generation,
+    List<int> ids,
+  ) async {
+    if (ids.isEmpty) return const <SeriesItemRow>[];
+    final rows =
+        await (select(seriesItems)..where(
+              (t) =>
+                  t.sourceId.equals(sourceId) &
+                  t.generation.equals(generation) &
+                  t.seriesId.isIn(ids),
+            ))
+            .get();
+    final byId = <int, SeriesItemRow>{for (final r in rows) r.seriesId: r};
+    return <SeriesItemRow>[for (final id in ids) ?byId[id]];
+  }
+
   Future<int> countVod(int sourceId, int generation) async {
     final count = vodItems.id.count();
     final query = selectOnly(vodItems)
