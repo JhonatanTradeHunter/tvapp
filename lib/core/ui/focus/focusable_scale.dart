@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:tvapp/core/ui/adaptive/device_mode.dart';
 import 'package:tvapp/core/ui/focus/tv_shortcuts.dart';
 
