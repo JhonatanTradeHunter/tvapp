@@ -1,0 +1,40 @@
+{"t": 1794222456.1043801, "path": "/playlist.m3u", "status": 200}
+{"t": 1794222609.3143597, "path": "/playlist.m3u", "status": 200}
+{"t": 1794222630.2124062, "path": "/playlist.m3u", "status": 200}
+{"t": 1794222630.5921924, "path": "/epg.xml", "status": 200, "past_start": 1794217200}
+{"t": 1794222646.8325093, "path": "/media/hls/index.m3u8", "status": 200, "kind": "media"}
+{"t": 1794222647.1293418, "path": "/media/hls/seg000.ts", "status": 200, "kind": "hls_segment"}
+{"t": 1794222652.6583312, "path": "/media/hls/seg001.ts", "status": 200, "kind": "hls_segment"}
+{"t": 1794222653.4051394, "path": "/media/hls/seg002.ts", "status": 200, "kind": "hls_segment"}
+{"t": 1794222654.3935342, "path": "/media/hls/seg003.ts", "status": 200, "kind": "hls_segment"}
+{"t": 1794222655.2082677, "path": "/media/hls/seg004.ts", "status": 200, "kind": "hls_segment"}
+{"t": 1794222655.860295, "path": "/media/hls/seg005.ts", "status": 200, "kind": "hls_segment"}
+{"t": 1794222656.3335667, "path": "/media/hls/seg006.ts", "status": 200, "kind": "hls_segment"}
+{"t": 1794222664.2606938, "path": "/media/test.ts", "status": 200, "kind": "media"}
+{"t": 1794222705.0521376, "path": "/playlist.m3u", "status": 200}
+{"t": 1794222705.6828094, "path": "/epg.xml", "status": 200, "past_start": 1794217200}
+{"t": 1794222737.7733433, "path": "/catchup/101.ts?start=1794217200&end=1794221700", "status": 200, "kind": "m3u_catchup", "start": "1794217200", "end": "1794221700"}
+{"t": 1794222794.18581, "path": "/player_api.php?username=teste&password=senha123", "status": 200, "action": null}
+{"t": 1794222794.797235, "path": "/player_api.php?username=teste&password=senha123&action=get_live_categories", "status": 200, "action": "get_live_categories"}
+{"t": 1794222795.349323, "path": "/player_api.php?username=teste&password=senha123&action=get_live_streams", "status": 200, "action": "get_live_streams"}
+{"t": 1794222796.2493, "path": "/player_api.php?username=teste&password=senha123&action=get_vod_categories", "status": 200, "action": "get_vod_categories"}
+{"t": 1794222796.7967222, "path": "/player_api.php?username=teste&password=senha123&action=get_vod_streams", "status": 200, "action": "get_vod_streams"}
+{"t": 1794222797.3644483, "path": "/player_api.php?username=teste&password=senha123&action=get_series_categories", "status": 200, "action": "get_series_categories"}
+{"t": 1794222797.9974644, "path": "/player_api.php?username=teste&password=senha123&action=get_series", "status": 200, "action": "get_series"}
+{"t": 1794222798.982503, "path": "/xmltv.php?username=teste&password=senha123", "status": 200, "past_start": 1794217200}
+{"t": 1794222820.6196017, "path": "/live/teste/senha123/301.m3u8", "status": 200, "kind": "xtream_live", "ext": "m3u8"}
+{"t": 1794222821.3685315, "path": "/live/teste/senha123/seg000.ts", "status": 200, "kind": "hls_segment"}
+{"t": 1794222822.4102006, "path": "/live/teste/senha123/seg001.ts", "status": 200, "kind": "hls_segment"}
+{"t": 1794222823.6133087, "path": "/live/teste/senha123/seg002.ts", "status": 200, "kind": "hls_segment"}
+{"t": 1794222824.4003115, "path": "/live/teste/senha123/seg003.ts", "status": 200, "kind": "hls_segment"}
+{"t": 1794222825.020512, "path": "/live/teste/senha123/seg004.ts", "status": 200, "kind": "hls_segment"}
+{"t": 1794222825.9324572, "path": "/live/teste/senha123/seg005.ts", "status": 200, "kind": "hls_segment"}
+{"t": 1794222826.670048, "path": "/live/teste/senha123/seg006.ts", "status": 200, "kind": "hls_segment"}
+{"t": 1794222827.3446748, "path": "/live/teste/senha123/seg007.ts", "status": 200, "kind": "hls_segment"}
+{"t": 1794222828.153207, "path": "/live/teste/senha123/seg008.ts", "status": 200, "kind": "hls_segment"}
+{"t": 1794222828.8823273, "path": "/live/teste/senha123/seg009.ts", "status": 200, "kind": "hls_segment"}
+{"t": 1794222846.6534219, "path": "/timeshift/teste/senha123/75/2026-11-09:06-40/301.m3u8", "status": 200, "kind": "xtream_timeshift", "minutes": "75", "when": "2026-11-09:06-40"}
+{"t": 1794222848.0323193, "path": "/timeshift/teste/senha123/75/2026-11-09:06-40/301.m3u8", "status": 200, "kind": "xtream_timeshift", "minutes": "75", "when": "2026-11-09:06-40"}
+{"t": 1794222867.547581, "path": "/player_api.php?username=teste&password=senha123&action=get_vod_info&vod_id=201", "status": 200, "action": "get_vod_info"}
+{"t": 1794222871.4782913, "path": "/movie/teste/senha123/201.mp4", "status": 200, "kind": "movie"}
+{"t": 1794222929.6892982, "path": "/player_api.php?username=teste&password=senha123&action=get_series_info&series_id=401", "status": 200, "action": "get_series_info"}
