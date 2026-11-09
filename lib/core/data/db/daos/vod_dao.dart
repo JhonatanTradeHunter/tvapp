@@ -181,6 +181,51 @@ class VodDao extends DatabaseAccessor<AppDatabase> with _$VodDaoMixin {
     return query.watch();
   }
 
+  /// Busca por trecho do nome; quem começa com o termo vem primeiro.
+  Future<List<VodItemRow>> searchVod(
+    int sourceId,
+    int generation,
+    String folded, {
+    int limit = 60,
+  }) {
+    final term = _escapeLike(folded);
+    return (select(vodItems)
+          ..where(
+            (t) =>
+                t.sourceId.equals(sourceId) &
+                t.generation.equals(generation) &
+                t.nameFolded.like('%$term%'),
+          )
+          ..orderBy([
+            (t) => OrderingTerm.asc(t.nameFolded.like('$term%').not()),
+            (t) => OrderingTerm.asc(t.position),
+          ])
+          ..limit(limit))
+        .get();
+  }
+
+  Future<List<SeriesItemRow>> searchSeries(
+    int sourceId,
+    int generation,
+    String folded, {
+    int limit = 60,
+  }) {
+    final term = _escapeLike(folded);
+    return (select(seriesItems)
+          ..where(
+            (t) =>
+                t.sourceId.equals(sourceId) &
+                t.generation.equals(generation) &
+                t.nameFolded.like('%$term%'),
+          )
+          ..orderBy([
+            (t) => OrderingTerm.asc(t.nameFolded.like('$term%').not()),
+            (t) => OrderingTerm.asc(t.position),
+          ])
+          ..limit(limit))
+        .get();
+  }
+
   /// Filmes da geração atual com estes ids, na ordem pedida.
   Future<List<VodItemRow>> vodByStreamIds(
     int sourceId,

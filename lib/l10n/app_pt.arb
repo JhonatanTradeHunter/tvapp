@@ -352,5 +352,41 @@
   "recentChannels": "Recentes",
   "clearHistory": "Limpar histórico",
   "clearHistoryConfirm": "Os canais, filmes e séries recentes deste perfil serão apagados.",
-  "historyCleared": "Histórico apagado."
+  "historyCleared": "Histórico apagado.",
+  "navSearch": "Buscar",
+  "searchField": "Canal, filme ou série",
+  "searchClear": "Limpar busca",
+  "searchHint": "Digite pelo menos 2 letras para buscar.",
+  "searchNoResults": "Nada encontrado para \"{query}\".",
+  "@searchNoResults": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "searchChannels": "Canais ({count})",
+  "@searchChannels": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchMovies": "Filmes ({count})",
+  "@searchMovies": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchSeries": "Séries ({count})",
+  "@searchSeries": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

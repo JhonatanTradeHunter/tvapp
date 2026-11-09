@@ -160,5 +160,13 @@
   "recentChannels": "Recent",
   "clearHistory": "Clear history",
   "clearHistoryConfirm": "Recent channels, movies and series for this profile will be removed.",
-  "historyCleared": "History cleared."
+  "historyCleared": "History cleared.",
+  "navSearch": "Search",
+  "searchField": "Channel, movie or series",
+  "searchClear": "Clear search",
+  "searchHint": "Type at least 2 letters to search.",
+  "searchNoResults": "Nothing found for \"{query}\".",
+  "searchChannels": "Channels ({count})",
+  "searchMovies": "Movies ({count})",
+  "searchSeries": "Series ({count})"
 }

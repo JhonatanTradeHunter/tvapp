@@ -11,11 +11,12 @@ import 'package:tvapp/features/guide/guide_screen.dart';
 import 'package:tvapp/features/live/live_screen.dart';
 import 'package:tvapp/features/profiles/profile_picker_screen.dart';
 import 'package:tvapp/features/profiles/profiles_screen.dart';
+import 'package:tvapp/features/search/search_screen.dart';
 import 'package:tvapp/features/setup/setup_screen.dart';
 import 'package:tvapp/features/vod/vod_screen.dart';
 import 'package:tvapp/l10n/gen/app_localizations.dart';
 
-enum ShellDestination { live, guide, vod, settings }
+enum ShellDestination { live, guide, vod, search, settings }
 
 extension ShellDestinationUi on ShellDestination {
   IconData get icon {
@@ -26,6 +27,8 @@ extension ShellDestinationUi on ShellDestination {
         return Icons.view_timeline_outlined;
       case ShellDestination.vod:
         return Icons.movie_outlined;
+      case ShellDestination.search:
+        return Icons.search;
       case ShellDestination.settings:
         return Icons.settings_outlined;
     }
@@ -39,6 +42,8 @@ extension ShellDestinationUi on ShellDestination {
         return l.navGuide;
       case ShellDestination.vod:
         return l.navVod;
+      case ShellDestination.search:
+        return l.navSearch;
       case ShellDestination.settings:
         return l.navSettings;
     }
@@ -95,6 +100,8 @@ class DestinationBody extends StatelessWidget {
         return GuideScreen(onGoLive: onGoLive);
       case ShellDestination.vod:
         return VodScreen(onGoLive: onGoLive);
+      case ShellDestination.search:
+        return const SearchScreen();
       case ShellDestination.settings:
         return const _SettingsHome();
     }
