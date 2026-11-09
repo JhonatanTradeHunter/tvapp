@@ -155,12 +155,28 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
+      # Nem toda API tem imagem android-tv x86_64; escolhe a mais nova
+      # disponível, preferindo x86_64 e caindo para x86.
+      - name: Escolher imagem de TV
+        id: tvimg
+        run: |
+          SDKM="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          LIST=$("$SDKM" --list 2>/dev/null | grep -oE 'system-images;android-[0-9]+;android-tv;x86(_64)?' | sort -u)
+          echo "$LIST"
+          PICK=$(echo "$LIST" | grep 'x86_64$' | sort -t- -k2 -V | tail -1)
+          [ -z "$PICK" ] && PICK=$(echo "$LIST" | sort -t- -k2 -V | tail -1)
+          API=$(echo "$PICK" | sed -E 's/.*android-([0-9]+);.*/\1/')
+          ARCH=$(echo "$PICK" | awk -F';' '{print $4}')
+          echo "escolhida: $PICK"
+          echo "api=$API" >> "$GITHUB_OUTPUT"
+          echo "arch=$ARCH" >> "$GITHUB_OUTPUT"
+
       - name: Rodar roteiro no emulador de TV
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 34
+          api-level: ${{ steps.tvimg.outputs.api }}
           target: android-tv
-          arch: x86_64
+          arch: ${{ steps.tvimg.outputs.arch }}
           profile: tv_1080p
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
