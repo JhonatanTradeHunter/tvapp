@@ -22,8 +22,13 @@ class AppTheme {
     return base.copyWith(
       scaffoldBackgroundColor: _background,
       focusColor: scheme.primary.withValues(alpha: 0.24),
+      // O textTheme do ThemeData ainda não tem tamanhos (eles entram pela
+      // tipografia na hora de montar o tema); sem o merge, fontSizeFactor
+      // falha com fontSize nulo.
       textTheme: mode == DeviceMode.tv
-          ? base.textTheme.apply(fontSizeFactor: 1.1)
+          ? base.typography.englishLike
+                .merge(base.textTheme)
+                .apply(fontSizeFactor: 1.1)
           : base.textTheme,
       snackBarTheme: const SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
